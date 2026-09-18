@@ -119,17 +119,41 @@ describe('Claude Code Hook PreToolUse End-to-End', () => {
     fs.rmSync(tempDir, { recursive: true });
   });
 
-  it('should block reading binary files like images and PDFs with Exit Code 2', async () => {
+  it('should allow reading native multimodal and notebook files (images, PDFs, ipynb) with Exit Code 0', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
-    const imgFile = path.join(tempDir, 'diagram.png');
+    const imgFile = path.join(tempDir, 'screenshot.png');
     fs.writeFileSync(imgFile, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00]));
 
-    const res = await runHookWithStdin({
+    const resImg = await runHookWithStdin({
       tool_name: 'Read',
       tool_input: { file_path: imgFile }
     });
+    assert.strictEqual(resImg.exitCode, 0, 'Must allow image file for multimodal vision');
+    assert.strictEqual(resImg.stderr, '');
 
-    assert.strictEqual(res.exitCode, 2, 'Must block binary file with exit code 2');
+    const pdfFile = path.join(tempDir, 'document.pdf');
+    fs.writeFileSync(pdfFile, '%PDF-1.4 ...');
+    const resPdf = await runHookWithStdin({
+      tool_name: 'Read',
+      tool_input: { file_path: pdfFile, pages: '1-3' }
+    });
+    assert.strictEqual(resPdf.exitCode, 0, 'Must allow scoped PDF read');
+    assert.strictEqual(resPdf.stderr, '');
+
+    fs.rmSync(tempDir, { recursive: true });
+  });
+
+  it('should block non-multimodal binary files like wasm, archives, or compiled binaries with Exit Code 2', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
+    const wasmFile = path.join(tempDir, 'module.wasm');
+    fs.writeFileSync(wasmFile, Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01]));
+
+    const res = await runHookWithStdin({
+      tool_name: 'Read',
+      tool_input: { file_path: wasmFile }
+    });
+
+    assert.strictEqual(res.exitCode, 2, 'Must block non-multimodal binary file with exit code 2');
     assert.ok(res.stderr.includes('ACCESO DENEGADO - BINARY'), 'Must emit binary warning');
 
     fs.rmSync(tempDir, { recursive: true });

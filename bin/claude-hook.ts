@@ -43,12 +43,13 @@ async function runHook(): Promise<void> {
   if (isReadTool) {
     const rawPath = toolInput.file_path || toolInput.path || toolInput.filePath || toolInput.AbsolutePath;
     targetFilePath = typeof rawPath === 'string' ? rawPath : null;
-    // Check if Claude specified line bounds
+    // Check if Claude specified line bounds or page ranges (e.g. for PDFs)
     if (
       toolInput.offset !== undefined ||
       toolInput.limit !== undefined ||
       toolInput.StartLine !== undefined ||
-      toolInput.EndLine !== undefined
+      toolInput.EndLine !== undefined ||
+      toolInput.pages !== undefined
     ) {
       isScoped = true;
     }
@@ -77,7 +78,21 @@ async function runHook(): Promise<void> {
     process.exit(0);
   }
 
-  // Check for Binaries, Lockfiles, and Minified files
+  const ext = path.extname(resolvedPath).toLowerCase();
+
+  // 3. Allow Claude Code native multimodal formats & notebooks (.png, .jpg, .pdf, .ipynb)
+  // Claude Code's Read tool natively renders images for multimodal vision, parses PDFs, and formats notebooks.
+  const CLAUDE_NATIVE_MEDIA_EXTENSIONS = new Set([
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.bmp', '.avif',
+    '.pdf',
+    '.ipynb'
+  ]);
+
+  if (CLAUDE_NATIVE_MEDIA_EXTENSIONS.has(ext)) {
+    process.exit(0); // Exit 0 = ALLOW Claude native vision & viewer
+  }
+
+  // 4. Check for Non-Multimodal Binaries, Lockfiles, and Minified files
   const classification = classifyFile(resolvedPath);
   if (classification.category !== 'source_code') {
     const feedback = [
@@ -94,7 +109,6 @@ async function runHook(): Promise<void> {
   const rawContent = fs.readFileSync(resolvedPath, 'utf-8');
   const lines = rawContent.split('\n');
   const totalLines = lines.length;
-  const ext = path.extname(resolvedPath);
 
   // If within safety thresholds, allow direct read
   if (totalLines <= CONFIG.maxLines && stat.size <= CONFIG.maxBytes) {
