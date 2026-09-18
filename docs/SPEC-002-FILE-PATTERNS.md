@@ -44,6 +44,22 @@ In production monorepos, agents frequently encounter files that degrade context 
 * Return `Exit Code 2` instructing Claude to use package manager introspection commands (`pnpm why <pkg>`, `npm ls <pkg>`).
 * Detect `*.min.js`, `*.min.css`, `*.bundle.js`, `*.map`. Block and recommend inspecting source files in `src/`.
 
+### 2.4 Frontend Frameworks & Single File Components (Svelte, Angular, Vue, Astro)
+* **Svelte (`.svelte`) & Vue (`.vue`):**
+  * **`<style>` Tag Collapsing:** Automatically collapse `<style>` or `<style scoped>` blocks into a single summary line:
+    ```text
+    [L210-L380] 🎨 170 lines of scoped CSS collapsed. Run Read(offset=210, limit=170) if styles are needed.
+    ```
+  * **`<script>` Block Extraction:** Prioritize extraction of component logic, props, runes, and lifecycle methods:
+    * Svelte: Legacy props (`export let`), Svelte 5 Runes (`$props()`, `$state()`, `$derived()`), and reactive declarations (`$: ...`).
+    * Vue: `<script setup>` macros (`defineProps()`, `defineEmits()`, `defineModel()`), and reactive primitives (`ref()`, `computed()`).
+* **Angular (`.component.ts`, `.service.ts`):**
+  * Detect decorators: `@Component(...)`, `@Injectable(...)`, `@Directive(...)`, `@Pipe(...)`.
+  * Extract input/output bindings and modern Angular Signals: `@Input()`, `@Output()`, `input()`, `output()`, `model()`.
+  * Extract lifecycle hooks (`ngOnInit`, `ngOnChanges`, `ngOnDestroy`).
+* **Astro (`.astro`):**
+  * Extract server-side frontmatter block (`--- ... ---`) containing component props, imports, and data fetching.
+
 ---
 
 ## 3. Component Architecture & Data Flow
