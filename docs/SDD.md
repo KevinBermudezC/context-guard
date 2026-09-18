@@ -27,7 +27,7 @@ When these models are fed large files (monorepo services, generated types, long 
 ```text
                            [ Claude Code Engine ]
                                      │
-                        (PreToolUse: View / Bash)
+                        (PreToolUse: Read / View / Bash)
                                      │
                                      ▼
                       ┌─────────────────────────────┐
@@ -62,7 +62,7 @@ When these models are fed large files (monorepo services, generated types, long 
 
 1. **PreToolUse Hook (`bin/claude-hook.ts`):**
    * Listens via standard input (`stdin`) for tool invocation payloads from Claude Code.
-   * Decodes `View`, `view_file`, and open `Bash` commands (`cat`, `less`, `more`).
+   * Decodes native `Read`, legacy `View`, `readFile`, and open `Bash` commands (`cat`, `less`, `more`).
    * Evaluates line count and file byte size against configured thresholds.
    * Emits exit codes:
      * **Exit Code `0` (Allow):** Used when the call is scoped (`offset`/`limit`) or file size is under the threshold.
@@ -87,9 +87,9 @@ When these models are fed large files (monorepo services, generated types, long 
 
 | Trigger Event | Condition | Action | Exit Code | Feedback Target |
 | :--- | :--- | :--- | :--- | :--- |
-| `View` | `offset` or `limit` present | Pass-through full slice | `0` | Claude Code executes tool |
-| `View` | Lines $\le 300$ & Bytes $\le 25\text{ KB}$ | Pass-through raw file | `0` | Claude Code executes tool |
-| `View` | Lines $> 300$ (Un-scoped) | Shunt to Tier 0 AST / Worker | `2` | `stderr` -> Claude Prompt |
+| `Read` / `View` | `offset` or `limit` present | Pass-through full slice | `0` | Claude Code executes tool |
+| `Read` / `View` | Lines $\le 300$ & Bytes $\le 25\text{ KB}$ | Pass-through raw file | `0` | Claude Code executes tool |
+| `Read` / `View` | Lines $> 300$ (Un-scoped) | Shunt to Tier 0 AST / Worker | `2` | `stderr` -> Claude Prompt |
 | `Bash` | Contains `\|` or `>` | Pass-through command | `0` | Claude Code executes tool |
 | `Bash` | Raw `cat <file>` ($> 300$ lines) | Intercept & Shunt | `2` | `stderr` -> Claude Prompt |
 
