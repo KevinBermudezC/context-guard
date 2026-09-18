@@ -7,7 +7,7 @@ export const CONFIG: ContextGuardConfig = {
   
   // Gemini Configuration
   geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
   
   // Ollama Configuration
   ollamaUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
@@ -16,5 +16,5 @@ export const CONFIG: ContextGuardConfig = {
   // OpenAI-compatible Configuration
   openaiBaseUrl: process.env.OPENAI_BASE_URL || '',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
-  openaiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-5.6-luna'
 };

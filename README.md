@@ -8,7 +8,7 @@
 
 > **Intelligent context admission control & token optimization for Claude Code, Cursor, and Agentic AI workflows.**
 
-Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier models (Claude 3.5 Sonnet, Opus 3, GPT-4o), extracting structural signatures or delegating summarization to ultra-fast worker models.
+Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier reasoning models (Claude Opus 5, Claude Sonnet 5, GPT-6 Astra), extracting structural signatures or delegating summarization to ultra-fast worker models (Gemini 3.8 Flash, local SLMs).
 
 ---
 
@@ -133,7 +133,7 @@ Customize thresholds and worker models via environment variables:
 | `CONTEXT_GUARD_MAX_BYTES` | `25600` | Maximum file size in bytes (~25 KB) |
 | `CONTEXT_GUARD_PROVIDER` | `skeleton` | Worker mode: `skeleton` (Tier 0 AST), `gemini`, `ollama`, or `openai` |
 | `GEMINI_API_KEY` | - | API key for Gemini 2.5 Flash worker |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name |
+| `GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model name |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama local endpoint |
 | `OLLAMA_MODEL` | `qwen2.5-coder:7b` | Model to use in Ollama |
 
