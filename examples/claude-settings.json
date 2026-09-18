@@ -4,7 +4,7 @@
       {
         "matcher": "View|Bash",
         "type": "command",
-        "command": "node ./node_modules/context-guard/dist/bin/claude-hook.js"
+        "command": "node ./node_modules/@kevinbermudezc/context-guard/dist/bin/claude-hook.js"
       }
     ]
   }

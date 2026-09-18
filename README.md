@@ -76,9 +76,9 @@ ContextGuard acts as an **admission turnstile** using Claude Code's native `PreT
 Clone or install in your workspace:
 
 ```bash
-pnpm add -D context-guard
+pnpm add -D @kevinbermudezc/context-guard
 # Or global install:
-pnpm add -g context-guard
+pnpm add -g @kevinbermudezc/context-guard
 ```
 
 ### 2. Configure Claude Code Hook
@@ -92,7 +92,7 @@ Add ContextGuard to your `.claude/settings.json` (at project root or `~/.claude/
       {
         "matcher": "View|Bash",
         "type": "command",
-        "command": "node ./node_modules/context-guard/dist/bin/claude-hook.js"
+        "command": "node ./node_modules/@kevinbermudezc/context-guard/dist/bin/claude-hook.js"
       }
     ]
   }
@@ -109,16 +109,16 @@ You can also use ContextGuard directly as a command-line tool:
 
 ```bash
 # View file through ContextGuard (auto-shunts if > 300 lines)
-npx context-guard src/large-service.ts
+npx @kevinbermudezc/context-guard src/large-service.ts
 
 # Ask a semantic question to the worker model
-npx context-guard logs/server.log --query "Find all 500 status database connection timeouts"
+npx @kevinbermudezc/context-guard logs/server.log --query "Find all 500 status database connection timeouts"
 
 # Specific line range (bypasses guard / passthrough)
-npx context-guard src/large-service.ts --start 120 --end 160
+npx @kevinbermudezc/context-guard src/large-service.ts --start 120 --end 160
 
 # Output structured JSON
-npx context-guard src/large-service.ts --json
+npx @kevinbermudezc/context-guard src/large-service.ts --json
 ```
 
 ---
