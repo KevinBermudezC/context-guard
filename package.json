@@ -1,0 +1,40 @@
+{
+  "name": "context-guard",
+  "version": "1.0.0",
+  "description": "Intelligent context admission control and token optimization for Claude Code, Cursor, and Agentic workflows.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "bin": {
+    "context-guard": "./dist/bin/context-guard.js",
+    "context-guard-hook": "./dist/bin/claude-hook.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x dist/bin/*.js",
+    "prepublishOnly": "npm run build",
+    "test": "npm run build && node --test dist/tests/**/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "claude-code",
+    "pretooluse-hook",
+    "ai-agent",
+    "token-optimization",
+    "finops",
+    "context-window",
+    "typescript"
+  ],
+  "author": "Kevin Bermudez",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
