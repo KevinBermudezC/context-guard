@@ -31,40 +31,74 @@ Frontier models are incredible at reasoning, but reading massive files (1,000+ l
 
 ## 🏗️ How ContextGuard Works
 
-ContextGuard acts as an **admission turnstile** using Claude Code's native `PreToolUse` hook lifecycle:
+ContextGuard acts as an **intelligent admission turnstile** using Claude Code's native `PreToolUse` hook lifecycle:
 
+```mermaid
+flowchart TD
+    A["🤖 <b>Claude Code / Agent Invocation</b><br><code>Read</code> or <code>cat file</code>"] --> B{"Is it a Binary, Lockfile<br>or Minified File?"}
+    
+    B -- "YES" --> C["🛑 <b>TURNSTILE HARD BLOCK (Exit 2)</b><br>• Binary: Suggests vision / pdftotext<br>• Lockfile: Suggests <code>pnpm why</code> / CLI<br>• Minified: Recommends <code>src/</code> source"]
+    
+    B -- "NO" --> D{"File &gt; 300 lines &<br>Un-scoped full read?"}
+    
+    D -- "NO (Small or scoped range)" --> E["✅ <b>ALLOW (Exit 0)</b><br>Instant direct passthrough to LLM"]
+    
+    D -- "YES (Large un-scoped read)" --> F["🛡️ <b>CONTEXTGUARD SHUNT TRIGGER</b>"]
+    
+    F --> G["<b>Tier 0: Local AST Skeletonizer</b><br>TS, JS, Python, Go, Rust, Java, C#<br>+ Svelte 5, Vue 3, Angular, Astro SFCs<br>• Collapses import walls (&gt;5 imports)<br>• Cost: <b>$0.00</b> | Latency: <b>&lt; 5ms</b>"]
+    F --> H["<b>Tier 1: Worker Model</b><br>Logs, JSON, Markdown, Docs<br>• Gemini 2.5 Flash / Local Ollama<br>• Cost: <b>~95% cheaper</b> than Frontier"]
+    
+    G --> I["🛑 <b>HARD BLOCK (Exit Code 2)</b><br>Emits line-tagged skeleton <code>[L89]</code> to stderr"]
+    H --> I
+    
+    I --> J["🎯 <b>Targeted Second Read</b><br>Claude reads feedback & fetches exact slice:<br><code>Read(file, offset=89, limit=35)</code><br><b>Tokens saved: 95% - 99%</b>"]
+
+    classDef block fill:#ef4444,stroke:#991b1b,stroke-width:2px,color:#fff;
+    classDef allow fill:#22c55e,stroke:#15803d,stroke-width:2px,color:#fff;
+    classDef trigger fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+    classDef tier fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#fff;
+    classDef action fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+
+    class C,I block;
+    class E allow;
+    class F trigger;
+    class G,H tier;
+    class J action;
 ```
-                      CLAUDE CODE TOOL INVOCATION
-                                    │
-                                    ▼
-                 Does the file exceed the limit (e.g. 300 lines)
-                     AND is it an un-scoped full read?
-                                    │
-                       ┌────────────┴────────────┐
-                      YES                        NO
-                       │                         │
-                       ▼                         ▼
-         ┌───────────────────────────┐      [ALLOW: Exit 0]
-         │    CONTEXTGUARD TRIGGER   │   File is small or
-         └─────────────┬─────────────┘   targeted slice requested
-                       │
-          ┌────────────┴────────────┐
-          ▼                         ▼
-    [Tier 0: Local AST]       [Tier 1: Worker Model]
-    TypeScript, Python, Go,   Logs, JSON, Markdown or
-    Rust, Java, C#            semantic question queries
-    • Cost: $0.00             • Gemini Flash / Ollama
-    • Latency: < 5ms          • Cost: ~95% cheaper
-          │                         │
-          └────────────┬────────────┘
-                       │
-                       ▼
-          [HARD BLOCK: Exit 2]
-     Emits signature skeleton with [L120] line tags to stderr
-                       │
-                       ▼
-     Claude receives system feedback & requests
-     the exact slice needed (e.g. offset=130, limit=40)
+
+---
+
+## 💡 Real-World Use Case: Before vs. After
+
+Imagine Claude Code needs to inspect how refund errors are handled in `src/payment-gateway.ts`, a 1,500-line service file with 28 imports and several auxiliary database queries.
+
+### ❌ Without ContextGuard (Standard Behavior)
+```text
+1. Claude Code executes: Read("src/payment-gateway.ts")
+   └── ❌ Dumps all 1,500 lines into the frontier reasoning context
+       ├── Tokens burned: ~8,500 tokens (~$0.13 in Claude Opus for a single read)
+       ├── Context window saturated with 28 repetitive imports & unrelated schema logic
+       └── High risk of "Lost in the Middle" attention degradation and hallucinations
+```
+
+### ✅ With ContextGuard (Context Shield Active)
+```text
+1. Claude Code executes: Read("src/payment-gateway.ts")
+   └── 🛡️ ContextGuard intercepts in <15ms and aborts with Exit Code 2:
+       🛑 [CONTEXTGUARD: READ BLOCKED (1,500 LINES)]
+       [L1-L32] 📦 28 imports collapsed (12 packages: @stripe/stripe-node, express...; 16 local).
+       [L45] export class PaymentGatewayService
+       [L52] constructor(private stripe: Stripe, private db: Database)
+       [L89] async processRefund(chargeId: string, amount: number): Promise<RefundResult>
+       [L145] async verifyWebhookSignature(payload: Buffer, sig: string): boolean
+       👉 Please request a targeted range using offset and limit.
+
+2. Claude Code parses the structural skeleton and executes:
+   Read("src/payment-gateway.ts", offset=89, limit=35)
+   └── ✅ Allowed immediately!
+       ├── Tokens consumed: ~160 tokens (instead of 8,500)
+       ├── Savings: 98% token reduction and cost down to < $0.002
+       └── Razor-sharp attention, pinpoint accuracy, and zero hallucinations
 ```
 
 ---
