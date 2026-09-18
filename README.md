@@ -35,23 +35,27 @@ ContextGuard acts as an **intelligent admission turnstile** using Claude Code's 
 
 ```mermaid
 flowchart TD
-    A["🤖 <b>Claude Code / Agent Invocation</b><br><code>Read</code> or <code>cat file</code>"] --> B{"Is it a Binary, Lockfile<br>or Minified File?"}
+    A["🤖 <b>Claude Code / Agent Invocation</b><br><code>Read</code> or <code>cat file</code>"] --> B{"Is it an Image, PDF,<br>or Notebook (.ipynb)?"}
     
-    B -- "YES" --> C["🛑 <b>TURNSTILE HARD BLOCK (Exit 2)</b><br>• Binary: Suggests vision / pdftotext<br>• Lockfile: Suggests <code>pnpm why</code> / CLI<br>• Minified: Recommends <code>src/</code> source"]
+    B -- "YES" --> E["✅ <b>ALLOW (Exit 0)</b><br>Claude Code native multimodal vision & viewer"]
     
-    B -- "NO" --> D{"File &gt; 300 lines &<br>Un-scoped full read?"}
+    B -- "NO" --> C{"Is it a Binary (wasm/zip/so),<br>Lockfile or Minified file?"}
     
-    D -- "NO (Small or scoped range)" --> E["✅ <b>ALLOW (Exit 0)</b><br>Instant direct passthrough to LLM"]
+    C -- "YES" --> D["🛑 <b>TURNSTILE HARD BLOCK (Exit 2)</b><br>• Binary: Blocks wasm, zip, sqlite, binaries<br>• Lockfile: Suggests <code>pnpm why</code> / CLI<br>• Minified: Recommends <code>src/</code> source"]
     
-    D -- "YES (Large un-scoped read)" --> F["🛡️ <b>CONTEXTGUARD SHUNT TRIGGER</b>"]
+    C -- "NO" --> F{"File &gt; 300 lines &<br>Un-scoped full read?"}
     
-    F --> G["<b>Tier 0: Local AST Skeletonizer</b><br>TS, JS, Python, Go, Rust, Java, C#<br>+ Svelte 5, Vue 3, Angular, Astro SFCs<br>• Collapses import walls (&gt;5 imports)<br>• Cost: <b>$0.00</b> | Latency: <b>&lt; 5ms</b>"]
-    F --> H["<b>Tier 1: Worker Model</b><br>Logs, JSON, Markdown, Docs<br>• Gemini 2.5 Flash / Local Ollama<br>• Cost: <b>~95% cheaper</b> than Frontier"]
+    F -- "NO (Small or scoped range)" --> E
     
-    G --> I["🛑 <b>HARD BLOCK (Exit Code 2)</b><br>Emits line-tagged skeleton <code>[L89]</code> to stderr"]
-    H --> I
+    F -- "YES (Large un-scoped read)" --> G["🛡️ <b>CONTEXTGUARD SHUNT TRIGGER</b>"]
     
-    I --> J["🎯 <b>Targeted Second Read</b><br>Claude reads feedback & fetches exact slice:<br><code>Read(file, offset=89, limit=35)</code><br><b>Tokens saved: 95% - 99%</b>"]
+    G --> H["<b>Tier 0: Local AST Skeletonizer</b><br>TS, JS, Python, Go, Rust, Java, C#<br>+ Svelte 5, Vue 3, Angular, Astro SFCs<br>• Collapses import walls (&gt;5 imports)<br>• Cost: <b>$0.00</b> | Latency: <b>&lt; 5ms</b>"]
+    G --> I["<b>Tier 1: Worker Model</b><br>Logs, JSON, Markdown, Docs<br>• Gemini 2.5 Flash / Local Ollama<br>• Cost: <b>~95% cheaper</b> than Frontier"]
+    
+    H --> J["🛑 <b>HARD BLOCK (Exit Code 2)</b><br>Emits line-tagged skeleton <code>[L89]</code> to stderr"]
+    I --> J
+    
+    J --> K["🎯 <b>Targeted Second Read</b><br>Claude reads feedback & fetches exact slice:<br><code>Read(file, offset=89, limit=35)</code><br><b>Tokens saved: 95% - 99%</b>"]
 
     classDef block fill:#ef4444,stroke:#991b1b,stroke-width:2px,color:#fff;
     classDef allow fill:#22c55e,stroke:#15803d,stroke-width:2px,color:#fff;
@@ -59,11 +63,11 @@ flowchart TD
     classDef tier fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#fff;
     classDef action fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
 
-    class C,I block;
+    class D,J block;
     class E allow;
-    class F trigger;
-    class G,H tier;
-    class J action;
+    class G trigger;
+    class H,I tier;
+    class K action;
 ```
 
 ---
