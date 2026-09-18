@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { CONFIG } from '../src/config.js';
 import { extractCodeSkeleton } from '../src/skeletonizer.js';
+import { classifyFile } from '../src/file-classifier.js';
 import type { ClaudeToolPayload } from '../src/types.js';
 
 async function runHook(): Promise<void> {
@@ -74,6 +75,19 @@ async function runHook(): Promise<void> {
   const resolvedPath = path.resolve(process.cwd(), targetFilePath);
   if (!fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).isDirectory()) {
     process.exit(0);
+  }
+
+  // Check for Binaries, Lockfiles, and Minified files
+  const classification = classifyFile(resolvedPath);
+  if (classification.category !== 'source_code') {
+    const feedback = [
+      `🛑 [CONTEXTGUARD: ACCESO DENEGADO - ${classification.category.toUpperCase()}]`,
+      classification.reason,
+      ``,
+      `👉 ${classification.recommendedAction}`
+    ].join('\n');
+    process.stderr.write(feedback + '\n');
+    process.exit(2);
   }
 
   const stat = fs.statSync(resolvedPath);
