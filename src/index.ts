@@ -3,12 +3,15 @@ import path from 'node:path';
 import { CONFIG } from './config.js';
 import { extractCodeSkeleton } from './skeletonizer.js';
 import { callWorkerModel } from './worker-model.js';
+import { classifyFile } from './file-classifier.js';
 import type { ProcessFileOptions, ProcessFileResult } from './types.js';
 
 export * from './types.js';
 export * from './config.js';
 export * from './skeletonizer.js';
 export * from './worker-model.js';
+export * from './file-classifier.js';
+export * from './import-collapser.js';
 
 /**
  * Main engine of ContextGuard
@@ -23,6 +26,30 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
       status: 'ERROR',
       error: `File not found or is a directory: ${filePath}`,
       content: ''
+    };
+  }
+
+  // 1. Check for Binaries, Lockfiles, and Minified files
+  const classification = classifyFile(resolved);
+  if (classification.category === 'binary') {
+    return {
+      status: 'BLOCKED_BINARY',
+      reason: classification.reason,
+      content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
+    };
+  }
+  if (classification.category === 'lockfile') {
+    return {
+      status: 'BLOCKED_LOCKFILE',
+      reason: classification.reason,
+      content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
+    };
+  }
+  if (classification.category === 'minified') {
+    return {
+      status: 'BLOCKED_MINIFIED',
+      reason: classification.reason,
+      content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
     };
   }
 

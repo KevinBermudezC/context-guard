@@ -27,6 +27,9 @@ export type ProcessFileStatus =
   | 'SHUNTED_LOCAL_AST'
   | 'SHUNTED_WORKER_MODEL'
   | 'SHUNT_FALLBACK'
+  | 'BLOCKED_BINARY'
+  | 'BLOCKED_LOCKFILE'
+  | 'BLOCKED_MINIFIED'
   | 'ERROR';
 
 export interface ProcessFileResult {

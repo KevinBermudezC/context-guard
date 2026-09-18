@@ -119,20 +119,34 @@ describe('Claude Code Hook PreToolUse End-to-End', () => {
     fs.rmSync(tempDir, { recursive: true });
   });
 
-  it('should block open cat commands on large files with Exit Code 2', async () => {
+  it('should block reading binary files like images and PDFs with Exit Code 2', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
-    const tempFile = path.join(tempDir, 'huge.ts');
-    fs.writeFileSync(tempFile, Array.from({ length: 200 }, () => 'code').join('\n'));
+    const imgFile = path.join(tempDir, 'diagram.png');
+    fs.writeFileSync(imgFile, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00]));
 
     const res = await runHookWithStdin({
-      tool_name: 'Bash',
-      tool_input: {
-        command: `cat ${tempFile}`
-      }
+      tool_name: 'Read',
+      tool_input: { file_path: imgFile }
     });
 
-    assert.strictEqual(res.exitCode, 2, 'Must block raw cat with exit 2');
-    assert.ok(res.stderr.includes('CONTEXTGUARD'));
+    assert.strictEqual(res.exitCode, 2, 'Must block binary file with exit code 2');
+    assert.ok(res.stderr.includes('ACCESO DENEGADO - BINARY'), 'Must emit binary warning');
+
+    fs.rmSync(tempDir, { recursive: true });
+  });
+
+  it('should block reading lockfiles with Exit Code 2 and suggest CLI introspection', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
+    const lockFile = path.join(tempDir, 'pnpm-lock.yaml');
+    fs.writeFileSync(lockFile, 'lockfileVersion: 5.4\npackages:\n  foo: 1.0.0');
+
+    const res = await runHookWithStdin({
+      tool_name: 'Read',
+      tool_input: { file_path: lockFile }
+    });
+
+    assert.strictEqual(res.exitCode, 2, 'Must block lockfile with exit code 2');
+    assert.ok(res.stderr.includes('lockfile de dependencias'), 'Must advise using pnpm why');
 
     fs.rmSync(tempDir, { recursive: true });
   });
