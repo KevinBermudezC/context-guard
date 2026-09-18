@@ -39,6 +39,7 @@ export function calculateTotal(items: number[]): number {
 
     const skeleton = extractCodeSkeleton(tsCode, '.ts');
     assert.ok(skeleton !== null);
+    if (!skeleton) throw new Error('Skeleton is null');
     assert.ok(skeleton.includes('[L1] import { Config } from \'./config.js\';'));
     assert.ok(skeleton.includes('export interface UserProfile'));
     assert.ok(skeleton.includes('export class UserManager'));
@@ -64,6 +65,7 @@ async def async_fetch():
 
     const skeleton = extractCodeSkeleton(pyCode, '.py');
     assert.ok(skeleton !== null);
+    if (!skeleton) throw new Error('Skeleton is null');
     assert.ok(skeleton.includes('[L1] import os'));
     assert.ok(skeleton.includes('class DataProcessor:'));
     assert.ok(skeleton.includes('async def async_fetch()'));

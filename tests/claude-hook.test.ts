@@ -7,7 +7,7 @@ import os from 'node:os';
 
 const HOOK_PATH = path.resolve(process.cwd(), 'dist/bin/claude-hook.js');
 
-function runHookWithStdin(payload: any): Promise<{ exitCode: number; stderr: string; stdout: string }> {
+function runHookWithStdin(payload: unknown): Promise<{ exitCode: number; stderr: string; stdout: string }> {
   return new Promise((resolve) => {
     const proc = spawn('node', [HOOK_PATH], {
       env: { ...process.env, CONTEXT_GUARD_MAX_LINES: '100' }
@@ -16,10 +16,10 @@ function runHookWithStdin(payload: any): Promise<{ exitCode: number; stderr: str
     let stdout = '';
     let stderr = '';
 
-    proc.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
+    proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code: number | null) => {
       resolve({ exitCode: code ?? 0, stderr, stdout });
     });
 
