@@ -37,9 +37,11 @@ async function runHook(): Promise<void> {
   let targetFilePath: string | null = null;
   let isScoped = false;
 
-  // 1. Intercept "View" or "view_file" tools
-  if (toolName === 'View' || toolName === 'view_file') {
-    targetFilePath = toolInput.file_path || toolInput.path || toolInput.AbsolutePath || null;
+  // 1. Intercept "Read", "View" or other file reading tools in Claude Code
+  const isReadTool = ['Read', 'View', 'view_file', 'readFile', 'read_file'].includes(toolName || '');
+  if (isReadTool) {
+    const rawPath = toolInput.file_path || toolInput.path || toolInput.filePath || toolInput.AbsolutePath;
+    targetFilePath = typeof rawPath === 'string' ? rawPath : null;
     // Check if Claude specified line bounds
     if (
       toolInput.offset !== undefined ||
@@ -102,7 +104,7 @@ async function runHook(): Promise<void> {
     `--------------------------------------------------------------------------------`,
     ``,
     `🎯 ACCIÓN RECOMENDADA:`,
-    `Revisa las firmas anteriores y ejecuta la herramienta "View" especificando los parámetros "offset" y "limit" (o StartLine y EndLine) para inspeccionar únicamente la sección necesaria.`
+    `Revisa las firmas anteriores y ejecuta la herramienta "Read" (o "View") especificando los parámetros "offset" y "limit" para inspeccionar únicamente la sección necesaria.`
   ].join('\n');
 
   // Emit to stderr and exit with code 2 to trigger a controlled block with system feedback in Claude Code

@@ -90,16 +90,20 @@ Add ContextGuard to your `.claude/settings.json` (at project root or `~/.claude/
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "View|Bash",
-        "type": "command",
-        "command": "node ./node_modules/@kevinbermudezc/context-guard/dist/bin/claude-hook.js"
+        "matcher": "Read|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./node_modules/@kevinbermudezc/context-guard/dist/bin/claude-hook.js"
+          }
+        ]
       }
     ]
   }
 }
 ```
 
-That's it! When Claude Code attempts to run `View` or bash commands like `cat massive-file.ts`, ContextGuard will intercept it, extract the structural map, and instruct Claude to seek only the exact line range it needs.
+That's it! When Claude Code attempts to run `Read` (or raw bash reads like `cat massive-file.ts`), ContextGuard will intercept it, extract the structural map, and instruct Claude to seek only the exact line range it needs.
 
 ---
 

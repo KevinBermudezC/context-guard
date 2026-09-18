@@ -29,6 +29,51 @@ function runHookWithStdin(payload: unknown): Promise<{ exitCode: number; stderr:
 }
 
 describe('Claude Code Hook PreToolUse End-to-End', () => {
+  it('should block un-scoped Read of a file over threshold with Exit Code 2', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
+    const tempFile = path.join(tempDir, 'huge.ts');
+    
+    // Create 150 lines of code
+    const lines = ['export class OrderService {'];
+    for (let i = 0; i < 150; i++) {
+      lines.push(`  // dummy line ${i}`);
+    }
+    lines.push('  public pay() { return true; }');
+    lines.push('}');
+    fs.writeFileSync(tempFile, lines.join('\n'));
+
+    const res = await runHookWithStdin({
+      tool_name: 'Read',
+      tool_input: { file_path: tempFile }
+    });
+
+    assert.strictEqual(res.exitCode, 2, 'Must exit with 2 to hard block Claude Code on Read');
+    assert.ok(res.stderr.includes('CONTEXTGUARD: LECTURA REGULADA'), 'Must emit warning in stderr');
+    assert.ok(res.stderr.includes('OrderService'), 'Must include skeleton in stderr');
+
+    fs.rmSync(tempDir, { recursive: true });
+  });
+
+  it('should allow (exit 0) when Read has offset and limit', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
+    const tempFile = path.join(tempDir, 'huge.ts');
+    fs.writeFileSync(tempFile, Array.from({ length: 200 }, () => 'code').join('\n'));
+
+    const res = await runHookWithStdin({
+      tool_name: 'Read',
+      tool_input: {
+        file_path: tempFile,
+        offset: 10,
+        limit: 20
+      }
+    });
+
+    assert.strictEqual(res.exitCode, 0, 'Must exit with 0 to allow Claude Code execution');
+    assert.strictEqual(res.stderr, '');
+
+    fs.rmSync(tempDir, { recursive: true });
+  });
+
   it('should block un-scoped View of a file over threshold with Exit Code 2', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-hook-'));
     const tempFile = path.join(tempDir, 'huge.ts');
@@ -47,7 +92,7 @@ describe('Claude Code Hook PreToolUse End-to-End', () => {
       tool_input: { file_path: tempFile }
     });
 
-    assert.strictEqual(res.exitCode, 2, 'Must exit with 2 to hard block Claude Code');
+    assert.strictEqual(res.exitCode, 2, 'Must exit with 2 to hard block Claude Code on View');
     assert.ok(res.stderr.includes('CONTEXTGUARD: LECTURA REGULADA'), 'Must emit warning in stderr');
     assert.ok(res.stderr.includes('OrderService'), 'Must include skeleton in stderr');
 
