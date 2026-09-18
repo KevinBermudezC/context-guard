@@ -156,4 +156,4 @@ pnpm test
 
 ## 📄 License
 
-MIT © [Kevin Bermudez](https://github.com/kevinbermudez)
+MIT © [Kevin Bermudez](https://github.com/kevinbermudezc)
