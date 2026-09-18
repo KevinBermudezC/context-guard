@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node: >=18](https://img.shields.io/badge/Node->=18.0.0-green.svg)](https://nodejs.org/)
+[![pnpm: >=10](https://img.shields.io/badge/pnpm->=10.0.0-F69220.svg?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0%20(Go%20Native)-blue.svg)](https://www.typescriptlang.org/)
 [![Go Engine](https://img.shields.io/badge/Compiler-Go%20Native%20(Corsa)-00ADD8.svg)](https://golang.org/)
 
@@ -75,9 +76,9 @@ ContextGuard acts as an **admission turnstile** using Claude Code's native `PreT
 Clone or install in your workspace:
 
 ```bash
-npm install -D context-guard
+pnpm add -D context-guard
 # Or global install:
-npm install -g context-guard
+pnpm add -g context-guard
 ```
 
 ### 2. Configure Claude Code Hook
@@ -139,16 +140,16 @@ Customize thresholds and worker models via environment variables:
 ---
 
 ## 🧪 Development & Testing
-
+ 
 ```bash
-# Install dependencies (includes TypeScript 7 native Go compiler)
-npm install
+# Install dependencies with strict symlink resolution
+pnpm install
 
 # Compile TypeScript using Go-powered tsc engine
-npm run build
+pnpm run build
 
 # Run unit and end-to-end tests
-npm test
+pnpm test
 ```
 
 ---
