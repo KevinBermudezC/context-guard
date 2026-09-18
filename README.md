@@ -154,6 +154,13 @@ pnpm test
 
 ---
 
+## 📚 Documentation & Roadmap
+
+* **[Software Design Document (SDD)](docs/SDD.md):** Complete technical architecture, FinOps mathematical breakdown, and threat model.
+* **[Product Roadmap (ROADMAP.md)](ROADMAP.md):** Vision and milestones for Universal MCP Server, native Cursor, Antigravity, Kiro, and Windsurf support.
+
+---
+
 ## 📄 License
 
 MIT © [Kevin Bermudez](https://github.com/kevinbermudezc)
