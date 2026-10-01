@@ -10,7 +10,7 @@
 
 > 🐶 **Built on Dogfooding:** ContextGuard se construyó a sí mismo — ahorró más de 500,000 tokens durante su propio ciclo de desarrollo medido con su propio ledger de FinOps.
 
-Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier reasoning models (Claude Opus 5, Claude Sonnet 5, GPT-6 Astra), extracting structural signatures or delegating summarization to ultra-fast worker models (Gemini 3.8 Flash, local SLMs).
+Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier reasoning models (Claude Opus 5.5, Claude Sonnet 5.5, GPT-6 Astra), extracting structural signatures or delegating summarization to ultra-fast worker models (Gemini 3.8 Flash, local SLMs).
 
 ---
 
@@ -26,7 +26,7 @@ ContextGuard is built on **TypeScript 7.0**, utilizing the native **Go-based com
 
 Frontier models are incredible at reasoning, but reading massive files (1,000+ lines of monorepo code, generated types, or verbose logs) introduces two major problems:
 
-1. **FinOps Bleed:** Frontier models cost between \$3.00 and \$15.00+ per million input tokens. Dumping a few 2,000-line files into a session quickly adds up to dozens of dollars per day per developer.
+1. **FinOps Bleed:** Frontier models cost between \$2.00 and \$10.00+ per million input tokens (e.g. Claude Opus 5.5, GPT-6 Astra). Dumping a few 2,000-line files into a session quickly adds up to dozens of dollars per day per developer.
 2. **Context Rot & "Lost in the Middle":** Saturating attention heads with hundreds of lines of boilerplate degrades precision, increases hallucination rates, and derails agentic reasoning loops.
 
 ---
@@ -82,7 +82,7 @@ Imagine Claude Code needs to inspect how refund errors are handled in `src/payme
 ```text
 1. Claude Code executes: Read("src/payment-gateway.ts")
    └── ❌ Dumps all 1,500 lines into the frontier reasoning context
-       ├── Tokens burned: ~8,500 tokens (~$0.13 in Claude Opus for a single read)
+       ├── Tokens burned: ~8,500 tokens (~$0.034 in Claude Opus 5.5 for a single read)
        ├── Context window saturated with 28 repetitive imports & unrelated schema logic
        └── High risk of "Lost in the Middle" attention degradation and hallucinations
 ```

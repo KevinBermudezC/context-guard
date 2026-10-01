@@ -1,6 +1,9 @@
 /**
  * Token Metrics and FinOps Unit Tests
  */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { estimateTokens, calculateFinOps, getAggregatedStats, resetMetrics, recordMetricEvent } from '../src/token-metrics.js';
@@ -22,13 +25,16 @@ describe('Token Metrics & FinOps (Fase 5 Preview)', () => {
     const fin = calculateFinOps(rawContent, skeletonContent);
     assert.ok(fin.tokensSaved > 0, 'Must have saved tokens');
     assert.ok(fin.percentageSaved > 80, `Expected >80% savings, got ${fin.percentageSaved}%`);
-    assert.ok(fin.dollarsSaved.claudeSonnet5 >= 0);
-    assert.ok(fin.dollarsSaved.claudeOpus5 >= 0);
-    assert.ok(fin.dollarsSaved.gpt5Astra >= 0);
+    assert.ok(fin.dollarsSaved.claudeSonnet55 >= 0);
+    assert.ok(fin.dollarsSaved.claudeOpus55 >= 0);
+    assert.ok(fin.dollarsSaved.gpt6Astra >= 0);
   });
 
   it('should record metric events and aggregate stats', () => {
-    resetMetrics();
+    const testMetricsFile = path.join(os.tmpdir(), `cg-metrics-test-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+    process.env.CONTEXT_GUARD_METRICS_FILE = testMetricsFile;
+    try {
+      resetMetrics();
 
     recordMetricEvent({
       source: 'cli',
@@ -44,5 +50,11 @@ describe('Token Metrics & FinOps (Fase 5 Preview)', () => {
     assert.strictEqual(stats.totalInterceptions, 1);
     assert.strictEqual(stats.totalTokensSaved, 900);
     assert.ok(stats.events.length === 1);
+    } finally {
+      delete process.env.CONTEXT_GUARD_METRICS_FILE;
+      if (fs.existsSync(testMetricsFile)) {
+        try { fs.unlinkSync(testMetricsFile); } catch {}
+      }
+    }
   });
 });
