@@ -156,6 +156,26 @@ server.registerResource(
   }
 );
 
+server.registerResource(
+  'stats',
+  'contextguard://stats',
+  {
+    title: 'ContextGuard Live FinOps Ledger',
+    description: 'Real-time telemetry of tokens prevented, input volume saved, and dollar ROI estimates across models.',
+    mimeType: 'application/json'
+  },
+  async (uri) => {
+    const stats = (await import('../src/token-metrics.js')).getAggregatedStats();
+    return {
+      contents: [{
+        uri: uri.href,
+        text: JSON.stringify(stats, null, 2),
+        mimeType: 'application/json'
+      }]
+    };
+  }
+);
+
 // ─── MCP Prompts (Optimized System Prompt Templates) ─────────────────────────
 
 server.registerPrompt(

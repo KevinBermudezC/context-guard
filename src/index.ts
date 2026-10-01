@@ -6,12 +6,15 @@ import { callWorkerModel } from './worker-model.js';
 import { classifyFile } from './file-classifier.js';
 import type { ProcessFileOptions, ProcessFileResult } from './types.js';
 
+import { calculateFinOps, recordMetricEvent } from './token-metrics.js';
+
 export * from './types.js';
 export * from './config.js';
 export * from './skeletonizer.js';
 export * from './worker-model.js';
 export * from './file-classifier.js';
 export * from './import-collapser.js';
+export * from './token-metrics.js';
 
 /**
  * Main engine of ContextGuard
@@ -29,28 +32,48 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
     };
   }
 
+  // Helper to wrap result with FinOps calculation and record metric
+  const finalize = (res: ProcessFileResult, originalRawText: string): ProcessFileResult => {
+    const metrics = calculateFinOps(originalRawText, res.content);
+    res.metrics = metrics;
+
+    if (metrics.tokensSaved > 0) {
+      recordMetricEvent({
+        source: 'cli',
+        filePath: path.relative(process.cwd(), resolved),
+        action: res.status,
+        rawTokens: metrics.rawTokens,
+        guardedTokens: metrics.guardedTokens,
+        tokensSaved: metrics.tokensSaved,
+        dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet
+      });
+    }
+
+    return res;
+  };
+
   // 1. Check for Binaries, Lockfiles, and Minified files
   const classification = classifyFile(resolved);
   if (classification.category === 'binary') {
-    return {
+    return finalize({
       status: 'BLOCKED_BINARY',
       reason: classification.reason,
       content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
-    };
+    }, '[BINARY CONTENT BLOCKED]');
   }
   if (classification.category === 'lockfile') {
-    return {
+    return finalize({
       status: 'BLOCKED_LOCKFILE',
       reason: classification.reason,
       content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
-    };
+    }, fs.readFileSync(resolved, 'utf-8'));
   }
   if (classification.category === 'minified') {
-    return {
+    return finalize({
       status: 'BLOCKED_MINIFIED',
       reason: classification.reason,
       content: `<!-- CONTEXTGUARD: ${classification.reason} -->\n<!-- ${classification.recommendedAction} -->`
-    };
+    }, fs.readFileSync(resolved, 'utf-8'));
   }
 
   const stat = fs.statSync(resolved);
@@ -64,57 +87,57 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
     const s = Math.max(1, startLine || 1) - 1;
     const e = Math.min(totalLines, endLine || totalLines);
     const sliced = lines.slice(s, e).join('\n');
-    return {
+    return finalize({
       status: 'PASSTHROUGH_SLICE',
       reason: `Scoped slice requested (lines ${s + 1} to ${e})`,
       content: sliced,
       totalLines,
       sizeBytes: stat.size
-    };
+    }, rawContent);
   }
 
   // 2. Small files pass through directly
   const isSmall = totalLines <= CONFIG.maxLines && stat.size <= CONFIG.maxBytes;
   if (isSmall && !forceWorker) {
-    return {
+    return finalize({
       status: 'PASSTHROUGH_FULL',
       reason: `File within limits (${totalLines} lines, ${(stat.size / 1024).toFixed(1)} KB)`,
       content: rawContent,
       totalLines,
       sizeBytes: stat.size
-    };
+    }, rawContent);
   }
 
   // 3. Shunt Tier 0: Structural AST / Skeleton (0 tokens, < 5ms)
   if (!query && !forceWorker && CONFIG.provider !== 'gemini' && CONFIG.provider !== 'ollama' && CONFIG.provider !== 'openai') {
     const skeleton = extractCodeSkeleton(rawContent, ext);
     if (skeleton) {
-      return {
+      return finalize({
         status: 'SHUNTED_LOCAL_AST',
         totalLines,
         sizeBytes: stat.size,
         content: `<!-- CONTEXTGUARD: Large file (${totalLines} lines, ${(stat.size / 1024).toFixed(1)} KB). Extracted structural skeleton. -->\n` +
                  `<!-- Request specific line ranges (e.g. L120-L150) to inspect implementation. -->\n\n` +
                  skeleton
-      };
+      }, rawContent);
     }
   }
 
   // 4. Shunt Tier 0 Fallback to AST if provider fails or if local AST requested
   const localSkeleton = extractCodeSkeleton(rawContent, ext);
   if (!query && localSkeleton && CONFIG.provider === 'skeleton') {
-    return {
+    return finalize({
       status: 'SHUNTED_LOCAL_AST',
       totalLines,
       sizeBytes: stat.size,
       content: `<!-- CONTEXTGUARD: Structural skeleton (Tier 0 AST) -->\n\n` + localSkeleton
-    };
+    }, rawContent);
   }
 
   // 5. Shunt Tier 1: Worker Model
   try {
     const summary = await callWorkerModel(rawContent, query, ext);
-    return {
+    return finalize({
       status: 'SHUNTED_WORKER_MODEL',
       provider: CONFIG.provider,
       totalLines,
@@ -122,23 +145,23 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
       content: `<!-- CONTEXTGUARD: File of ${totalLines} lines summarized by Worker Model (${CONFIG.provider}) -->\n` +
                `<!-- Request specific line ranges using offset/limit to read full blocks. -->\n\n` +
                summary
-    };
+    }, rawContent);
   } catch (err: any) {
     // If worker model fails, fallback to local skeleton or first 50 lines
     if (localSkeleton) {
-      return {
+      return finalize({
         status: 'SHUNTED_LOCAL_AST',
         warning: `Worker failed (${err.message}). Fell back to local AST skeleton.`,
         totalLines,
         sizeBytes: stat.size,
         content: localSkeleton
-      };
+      }, rawContent);
     }
 
-    return {
+    return finalize({
       status: 'SHUNT_FALLBACK',
       warning: `Worker failed: ${err.message}. Showing head of file.`,
       content: lines.slice(0, 50).join('\n') + `\n\n... [${totalLines - 50} lines truncated by ContextGuard] ...`
-    };
+    }, rawContent);
   }
 }

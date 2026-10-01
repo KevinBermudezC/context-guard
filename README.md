@@ -220,22 +220,28 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
 
 ---
 
-## 🛠️ CLI Usage (Claude Code Hook)
+## 🛠️ CLI & FinOps Telemetry (v1.3.0)
 
-You can also use ContextGuard directly as a command-line tool:
+ContextGuard includes a beautiful developer CLI with built-in token savings and financial ROI telemetry:
 
 ```bash
-# View file through ContextGuard (auto-shunts if > 300 lines)
+# View file through ContextGuard (shows FinOps savings card if shunted)
 npx @kevinbermudezc/context-guard src/large-service.ts
 
+# Inspect token savings across your machine
+npx @kevinbermudezc/context-guard stats
+
+# Audit an entire codebase or folder (scans files > 300 lines)
+npx @kevinbermudezc/context-guard stats src/
+
+# Real-time interactive telemetry monitor (updates live during Claude/Cursor sessions)
+npx @kevinbermudezc/context-guard stats --watch
+
 # Ask a semantic question to the worker model
-npx @kevinbermudezc/context-guard logs/server.log --query "Find all 500 status database connection timeouts"
+npx @kevinbermudezc/context-guard logs/server.log --query "Find all 500 status timeouts"
 
 # Specific line range (bypasses guard / passthrough)
 npx @kevinbermudezc/context-guard src/large-service.ts --start 120 --end 160
-
-# Output structured JSON
-npx @kevinbermudezc/context-guard src/large-service.ts --json
 ```
 
 ---

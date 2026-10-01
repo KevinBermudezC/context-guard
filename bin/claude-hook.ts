@@ -13,6 +13,7 @@ import path from 'node:path';
 import { CONFIG } from '../src/config.js';
 import { extractCodeSkeleton } from '../src/skeletonizer.js';
 import { classifyFile } from '../src/file-classifier.js';
+import { calculateFinOps, recordMetricEvent } from '../src/token-metrics.js';
 import type { ClaudeToolPayload } from '../src/types.js';
 
 async function runHook(): Promise<void> {
@@ -121,9 +122,21 @@ async function runHook(): Promise<void> {
   const skeleton = extractCodeSkeleton(rawContent, ext);
   const preview = skeleton || lines.slice(0, 40).join('\n') + `\n... [${totalLines - 40} lines truncated by ContextGuard]`;
 
+  const finOps = calculateFinOps(rawContent, preview);
+  recordMetricEvent({
+    source: 'hook',
+    filePath: path.relative(process.cwd(), resolvedPath),
+    action: 'SHUNTED_LOCAL_AST',
+    rawTokens: finOps.rawTokens,
+    guardedTokens: finOps.guardedTokens,
+    tokensSaved: finOps.tokensSaved,
+    dollarsSavedSonnet: finOps.dollarsSaved.claudeSonnet
+  });
+
   const feedbackMessage = [
     `🛡️ [CONTEXTGUARD: LECTURA REGULADA - PREVENCIÓN DE SATURACIÓN DE TOKENS]`,
     `El recurso "${path.basename(resolvedPath)}" contiene ${totalLines} líneas (~${(stat.size / 1024).toFixed(1)} KB).`,
+    `📉 Tokens prevenidos: ~${finOps.tokensSaved.toLocaleString()} tokens (${finOps.percentageSaved}% ahorro | ~$${finOps.dollarsSaved.claudeSonnet} USD en Sonnet).`,
     `Para optimizar tu contexto y prevenir degradación de razonamiento, no se ha cargado el archivo completo en la ventana principal.`,
     ``,
     `📋 ESQUELETO ESTRUCTURAL Y FIRMAS (Con índices de línea):`,
