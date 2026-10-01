@@ -4,6 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
+        "-p",
         "@kevinbermudezc/context-guard@latest",
         "context-guard-mcp"
       ]
