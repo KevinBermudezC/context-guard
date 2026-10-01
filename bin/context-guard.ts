@@ -124,8 +124,9 @@ function auditDirectory(targetDir: string): void {
 
   const tokensSaved = Math.max(0, totalRawTokens - totalGuardedTokens);
   const pctSaved = totalRawTokens > 0 ? ((tokensSaved / totalRawTokens) * 100).toFixed(1) : '0';
-  const opusDollars = ((tokensSaved / 1_000_000) * 15.00).toFixed(2);
-  const sonnetDollars = ((tokensSaved / 1_000_000) * 3.00).toFixed(2);
+  const opusDollars = ((tokensSaved / 1_000_000) * 4.00).toFixed(2);
+  const sonnetDollars = ((tokensSaved / 1_000_000) * 2.00).toFixed(2);
+  const gpt6Dollars = ((tokensSaved / 1_000_000) * 10.00).toFixed(2);
 
   console.log(`
   ${c.cyan}🔍 ${c.bold}Auditoría FinOps:${c.reset} ${c.white}${path.relative(process.cwd(), resolved) || '.'}${c.reset}
@@ -137,8 +138,9 @@ function auditDirectory(targetDir: string): void {
     ${c.gray}•${c.reset} ${c.bold}Ahorro Neto:${c.reset}         ${c.green}${c.bold}~${tokensSaved.toLocaleString()} tokens (${pctSaved}% reducción)${c.reset}
 
   ${c.bold}Ahorro Estimado en Dólares:${c.reset}
-    ${c.gray}•${c.reset} Claude Opus 5:      ${c.green}$${opusDollars} USD${c.reset}
-    ${c.gray}•${c.reset} Claude Sonnet 5:    ${c.green}$${sonnetDollars} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Opus 5.5:    ${c.green}$${opusDollars} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Sonnet 5.5:  ${c.green}$${sonnetDollars} USD${c.reset}
+    ${c.gray}•${c.reset} GPT-6 Astra:        ${c.green}$${gpt6Dollars} USD${c.reset}
 `);
 }
 
@@ -164,9 +166,9 @@ function runRealtimeWatch(): void {
     ${c.gray}•${c.reset} ${c.bold}Tokens netos ahorrados:${c.reset}   ${c.green}${c.bold}~${stats.totalTokensSaved.toLocaleString()}${c.reset}
 
   ${c.bold}Retorno de Inversión (ROI):${c.reset}
-    ${c.gray}•${c.reset} Claude Opus 5:            ${c.green}$${stats.totalDollarsSavedOpus.toFixed(2)} USD${c.reset}
-    ${c.gray}•${c.reset} Claude Sonnet 5:          ${c.green}$${stats.totalDollarsSavedSonnet.toFixed(2)} USD${c.reset}
-    ${c.gray}•${c.reset} GPT-5 (Astra):            ${c.green}$${stats.totalDollarsSavedGpt5.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Opus 5.5:          ${c.green}$${stats.totalDollarsSavedOpus.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Sonnet 5.5:        ${c.green}$${stats.totalDollarsSavedSonnet.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} GPT-6 Astra:              ${c.green}$${stats.totalDollarsSavedGpt6.toFixed(2)} USD${c.reset}
 
   ${c.bold}Últimos Eventos:${c.reset}`);
 
@@ -234,9 +236,9 @@ function printStats(args: string[]): void {
     ${c.gray}•${c.reset} ${c.bold}Tokens netos ahorrados:${c.reset}   ${c.green}${c.bold}~${stats.totalTokensSaved.toLocaleString()}${c.reset}
 
   ${c.bold}Ahorro Estimado en Dólares:${c.reset}
-    ${c.gray}•${c.reset} Claude Opus 5:            ${c.green}$${stats.totalDollarsSavedOpus.toFixed(2)} USD${c.reset}
-    ${c.gray}•${c.reset} Claude Sonnet 5:          ${c.green}$${stats.totalDollarsSavedSonnet.toFixed(2)} USD${c.reset}
-    ${c.gray}•${c.reset} GPT-5 (Astra):            ${c.green}$${stats.totalDollarsSavedGpt5.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Opus 5.5:          ${c.green}$${stats.totalDollarsSavedOpus.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} Claude Sonnet 5.5:        ${c.green}$${stats.totalDollarsSavedSonnet.toFixed(2)} USD${c.reset}
+    ${c.gray}•${c.reset} GPT-6 Astra:              ${c.green}$${stats.totalDollarsSavedGpt6.toFixed(2)} USD${c.reset}
 
   ${c.dim}💡 Corre "context-guard stats --watch" para ver el monitor en vivo.${c.reset}
   ${c.dim}💡 Corre "context-guard stats <directorio>" para auditar una carpeta.${c.reset}
@@ -265,7 +267,7 @@ function printExecutionCard(filePath: string, result: any): void {
   ${c.cyan}🛡️  ${c.bold}${fileName}${c.reset} ${c.gray}•${c.reset} ${label} ${c.gray}•${c.reset} ${result.totalLines ? `${result.totalLines} líneas (~${((result.sizeBytes || 0) / 1024).toFixed(1)} KB)` : ''}`);
 
   if (m && m.tokensSaved > 0) {
-    console.log(`  ${c.green}📉 Ahorro:${c.reset} ${c.bold}-${m.tokensSaved.toLocaleString()} tokens (-${m.percentageSaved}%)${c.reset} ${c.gray}(~$${m.dollarsSaved.claudeSonnet5} USD en Claude Sonnet 5)${c.reset}`);
+    console.log(`  ${c.green}📉 Ahorro:${c.reset} ${c.bold}-${m.tokensSaved.toLocaleString()} tokens (-${m.percentageSaved}%)${c.reset} ${c.gray}(~$${m.dollarsSaved.claudeSonnet55} USD en Claude Sonnet 5.5)${c.reset}`);
   }
   console.log('');
 }

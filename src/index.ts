@@ -45,7 +45,7 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
         rawTokens: metrics.rawTokens,
         guardedTokens: metrics.guardedTokens,
         tokensSaved: metrics.tokensSaved,
-        dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet5
+        dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet55
       });
     }
 

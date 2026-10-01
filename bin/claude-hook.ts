@@ -130,13 +130,13 @@ async function runHook(): Promise<void> {
     rawTokens: finOps.rawTokens,
     guardedTokens: finOps.guardedTokens,
     tokensSaved: finOps.tokensSaved,
-    dollarsSavedSonnet: finOps.dollarsSaved.claudeSonnet5
+    dollarsSavedSonnet: finOps.dollarsSaved.claudeSonnet55
   });
 
   const feedbackMessage = [
     `🛡️ [CONTEXTGUARD: LECTURA REGULADA - PREVENCIÓN DE SATURACIÓN DE TOKENS]`,
     `El recurso "${path.basename(resolvedPath)}" contiene ${totalLines} líneas (~${(stat.size / 1024).toFixed(1)} KB).`,
-    `📉 Tokens prevenidos: ~${finOps.tokensSaved.toLocaleString()} tokens (${finOps.percentageSaved}% ahorro | ~$${finOps.dollarsSaved.claudeSonnet5} USD en Claude Sonnet 5).`,
+    `📉 Tokens prevenidos: ~${finOps.tokensSaved.toLocaleString()} tokens (${finOps.percentageSaved}% ahorro | ~$${finOps.dollarsSaved.claudeSonnet55} USD en Claude Sonnet 5.5).`,
     `Para optimizar tu contexto y prevenir degradación de razonamiento, no se ha cargado el archivo completo en la ventana principal.`,
     ``,
     `📋 ESQUELETO ESTRUCTURAL Y FIRMAS (Con índices de línea):`,

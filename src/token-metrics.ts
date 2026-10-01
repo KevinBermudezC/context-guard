@@ -14,9 +14,9 @@ export interface TokenComparison {
   tokensSaved: number;
   percentageSaved: number;
   dollarsSaved: {
-    claudeOpus5: number;   // $15.00 / M tokens (Claude Opus 5)
-    claudeSonnet5: number; // $3.00 / M tokens (Claude Sonnet 5)
-    gpt5Astra: number;     // $2.50 / M tokens (GPT-5.6 / GPT-5 Astra)
+    claudeOpus55: number;   // $4.00 / M tokens (Claude Opus 5.5)
+    claudeSonnet55: number; // $2.00 / M tokens (Claude Sonnet 5.5)
+    gpt6Astra: number;      // $10.00 / M tokens (GPT-6 Astra)
   };
 }
 
@@ -38,7 +38,7 @@ export interface AggregatedStats {
   totalTokensSaved: number;
   totalDollarsSavedOpus: number;
   totalDollarsSavedSonnet: number;
-  totalDollarsSavedGpt5: number;
+  totalDollarsSavedGpt6: number;
   events: MetricEvent[];
 }
 
@@ -73,10 +73,10 @@ export function calculateFinOps(rawText: string, guardedText: string): TokenComp
   const tokensSaved = Math.max(0, rawTokens - guardedTokens);
   const percentageSaved = rawTokens > 0 ? (tokensSaved / rawTokens) * 100 : 0;
   
-  // Pricing per 1M input tokens
-  const OPUS5_PRICE_PER_M = 15.00;
-  const SONNET5_PRICE_PER_M = 3.00;
-  const GPT5_PRICE_PER_M = 2.50;
+  // Pricing per 1M input tokens (Anthropic & OpenAI official docs)
+  const OPUS55_PRICE_PER_M = 4.00;
+  const SONNET55_PRICE_PER_M = 2.00;
+  const GPT6_PRICE_PER_M = 10.00;
 
   return {
     rawBytes,
@@ -86,9 +86,9 @@ export function calculateFinOps(rawText: string, guardedText: string): TokenComp
     tokensSaved,
     percentageSaved: parseFloat(percentageSaved.toFixed(1)),
     dollarsSaved: {
-      claudeOpus5: parseFloat(((tokensSaved / 1_000_000) * OPUS5_PRICE_PER_M).toFixed(4)),
-      claudeSonnet5: parseFloat(((tokensSaved / 1_000_000) * SONNET5_PRICE_PER_M).toFixed(4)),
-      gpt5Astra: parseFloat(((tokensSaved / 1_000_000) * GPT5_PRICE_PER_M).toFixed(4))
+      claudeOpus55: parseFloat(((tokensSaved / 1_000_000) * OPUS55_PRICE_PER_M).toFixed(4)),
+      claudeSonnet55: parseFloat(((tokensSaved / 1_000_000) * SONNET55_PRICE_PER_M).toFixed(4)),
+      gpt6Astra: parseFloat(((tokensSaved / 1_000_000) * GPT6_PRICE_PER_M).toFixed(4))
     }
   };
 }
@@ -96,6 +96,9 @@ export function calculateFinOps(rawText: string, guardedText: string): TokenComp
 // ─── Persistent Metrics Store (~/.contextguard/metrics.json) ──────────────────
 
 function getMetricsFilePath(): string {
+  if (process.env.CONTEXT_GUARD_METRICS_FILE) {
+    return process.env.CONTEXT_GUARD_METRICS_FILE;
+  }
   const dir = path.join(os.homedir(), '.contextguard');
   if (!fs.existsSync(dir)) {
     try {
@@ -163,9 +166,9 @@ export function getAggregatedStats(): AggregatedStats {
     totalRawTokens,
     totalGuardedTokens,
     totalTokensSaved,
-    totalDollarsSavedOpus: parseFloat(((totalTokensSaved / 1_000_000) * 15.00).toFixed(2)),
-    totalDollarsSavedSonnet: parseFloat(((totalTokensSaved / 1_000_000) * 3.00).toFixed(2)),
-    totalDollarsSavedGpt5: parseFloat(((totalTokensSaved / 1_000_000) * 2.50).toFixed(2)),
+    totalDollarsSavedOpus: parseFloat(((totalTokensSaved / 1_000_000) * 4.00).toFixed(2)),
+    totalDollarsSavedSonnet: parseFloat(((totalTokensSaved / 1_000_000) * 2.00).toFixed(2)),
+    totalDollarsSavedGpt6: parseFloat(((totalTokensSaved / 1_000_000) * 10.00).toFixed(2)),
     events
   };
 }

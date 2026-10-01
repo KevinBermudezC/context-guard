@@ -11,7 +11,7 @@
 ## 1. Executive Summary & Problem Statement
 
 ### 1.1 Context & Motivation
-With the advent of advanced frontier reasoning models (**Claude Opus 5**, **Claude Sonnet 5**, and **GPT-6 Astra**), agentic developer workflows have shifted heavily toward **System-2 Reasoning** (test-time compute). 
+With the advent of advanced frontier reasoning models (**Claude Opus 5.5**, **Claude Sonnet 5.5**, and **GPT-6 Astra**), agentic developer workflows have shifted heavily toward **System-2 Reasoning** (test-time compute). 
 
 When these models are fed large files (monorepo services, generated types, long logs) in raw text:
 1. **Compounded Token Cost:** Frontier models incur premium pricing on input tokens and expand their reasoning traces (*thinking tokens*), resulting in bills up to 3x–5x higher than necessary for simple read operations.
