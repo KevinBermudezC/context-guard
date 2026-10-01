@@ -21,8 +21,10 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 
 import { processWithContextGuard } from '../src/index.js';
+import { CONFIG } from '../src/config.js';
 import { classifyFile } from '../src/file-classifier.js';
 import { extractCodeSkeleton, isSupportedExtension } from '../src/skeletonizer.js';
+import { spawnSync } from 'node:child_process';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,9 +37,151 @@ const NATIVE_MEDIA_EXTS = new Set([
   '.pdf', '.ipynb'
 ]);
 
+// Ignored directories for pure Node recursive scan fallback
+const IGNORED_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', '.next', '.turbo', '.cache',
+  'coverage', '.vscode', '.idea'
+]);
+
+/**
+ * Pure Node.js fallback scanner when ripgrep (rg) is not installed on the system.
+ */
+function safeNodeGrep(
+  searchDir: string,
+  pattern: string,
+  isRegex: boolean,
+  includeGlob?: string,
+  maxFiles = 20
+): Array<{ filePath: string; matches: string[] }> {
+  const results: Array<{ filePath: string; matches: string[] }> = [];
+
+  let matcher: (line: string) => boolean;
+  if (isRegex) {
+    try {
+      const re = new RegExp(pattern);
+      matcher = (l: string) => re.test(l);
+    } catch {
+      return [];
+    }
+  } else {
+    matcher = (l: string) => l.includes(pattern);
+  }
+
+  // Simple extension or filename filter
+  const filterExt = includeGlob?.startsWith('*.') ? includeGlob.slice(1).toLowerCase() : null;
+
+  function walk(currentDir: string) {
+    if (results.length >= maxFiles) return;
+
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (results.length >= maxFiles) break;
+
+      const fullPath = path.join(currentDir, entry.name);
+
+      if (entry.isDirectory()) {
+        if (!IGNORED_DIRS.has(entry.name) && !entry.name.startsWith('.')) {
+          walk(fullPath);
+        }
+      } else if (entry.isFile()) {
+        if (filterExt && !entry.name.toLowerCase().endsWith(filterExt)) {
+          continue;
+        }
+
+        try {
+          const content = fs.readFileSync(fullPath, 'utf-8');
+          const lines = content.split('\n');
+          const matchingLines: string[] = [];
+
+          for (let i = 0; i < lines.length; i++) {
+            if (matcher(lines[i])) {
+              const start = Math.max(0, i - 1);
+              const end = Math.min(lines.length - 1, i + 1);
+              for (let c = start; c <= end; c++) {
+                matchingLines.push(`${c + 1}:${lines[c]}`);
+              }
+              if (matchingLines.length >= 10) break;
+            }
+          }
+
+          if (matchingLines.length > 0) {
+            results.push({ filePath: fullPath, matches: matchingLines });
+          }
+        } catch {
+          // ignore binary or unreadable files
+        }
+      }
+    }
+  }
+
+  walk(searchDir);
+  return results;
+}
+
 // ─── Server Setup ─────────────────────────────────────────────────────────────
 
 const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
+
+// ─── MCP Resources (Static/Live System Inspection) ───────────────────────────
+
+server.registerResource(
+  'config',
+  'contextguard://config',
+  {
+    title: 'ContextGuard Active Configuration',
+    description: 'Current thresholds, active worker provider, and buffer safety settings in effect.',
+    mimeType: 'application/json'
+  },
+  async (uri) => {
+    return {
+      contents: [{
+        uri: uri.href,
+        text: JSON.stringify({
+          version: SERVER_VERSION,
+          maxLinesThreshold: CONFIG.maxLines,
+          maxBytesThreshold: CONFIG.maxBytes,
+          workerProvider: CONFIG.provider,
+          supportedSfcFrameworks: ['svelte', 'vue', 'angular', 'astro'],
+          nativeMediaBypass: Array.from(NATIVE_MEDIA_EXTS)
+        }, null, 2),
+        mimeType: 'application/json'
+      }]
+    };
+  }
+);
+
+// ─── MCP Prompts (Optimized System Prompt Templates) ─────────────────────────
+
+server.registerPrompt(
+  'investigate_codebase_safely',
+  {
+    title: 'Investigate Codebase Safely',
+    description: 'Standard system instruction guiding the AI agent to avoid full-file dumps by prioritizing inspect_outline and targeted read_file_safe ranges.'
+  },
+  async () => {
+    return {
+      messages: [{
+        role: 'user',
+        content: {
+          type: 'text',
+          text: [
+            'Follow ContextGuard FinOps & token preservation rules:',
+            '1. Do not perform unrestricted open reads of files over 300 lines.',
+            '2. Call "inspect_outline" first to discover method and type signatures with their exact line tags [L#].',
+            '3. Read only targeted slices with "read_file_safe(file_path, start_line, end_line)".',
+            '4. When searching for symbols, use "grep_distilled" to examine matching signatures instead of dumping entire source files.'
+          ].join('\n')
+        }
+      }]
+    };
+  }
+);
 
 // ─── Tool: read_file_safe ─────────────────────────────────────────────────────
 
@@ -233,7 +377,7 @@ server.registerTool(
       'Searches for a pattern in files and returns only the structural outline of matching files,',
       'not the full content. Prevents context flooding when searching across a large codebase.',
       'For each matching file, returns the filename, matching lines, and the structural skeleton.',
-      'Pattern supports ripgrep syntax (fixed strings by default, pass is_regex=true for regex).',
+      'Uses ripgrep if available, with an automatic fallback to pure Node.js scanning.',
       'Results are capped at 20 files to keep context manageable.'
     ].join('\n'),
     inputSchema: {
@@ -254,85 +398,85 @@ server.registerTool(
         };
       }
 
-      // Build ripgrep command
+      let matchingEntries: Array<{ filePath: string; matchLines: string }> = [];
+
+      // 1. Attempt ripgrep using safe spawnSync (no shell injection)
       const rgArgs: string[] = [
         '--line-number',
         '--with-filename',
         '--no-heading',
         '--color=never',
-        '--max-count=5',      // max 5 matches per file
-        '-l'                   // list matching files first
+        '--max-count=5',
+        '-l'
       ];
-
       if (!is_regex) rgArgs.push('--fixed-strings');
       if (include) rgArgs.push('--glob', include);
       rgArgs.push('--', pattern, searchDir);
 
-      let matchingFiles: string[] = [];
-      try {
-        const output = execSync(`rg ${rgArgs.map(a => JSON.stringify(a)).join(' ')}`, {
-          encoding: 'utf-8',
-          maxBuffer: 1024 * 512
-        });
-        matchingFiles = output.trim().split('\n').filter(Boolean).slice(0, 20);
-      } catch (rgErr: any) {
-        // rg exits with 1 if no matches
-        if (rgErr.status === 1) {
-          return {
-            content: [{ type: 'text', text: `ℹ️ [CONTEXTGUARD GREP] No matches for "${pattern}" in ${searchDir}` }]
-          };
-        }
-        // rg not installed — fall back to a Node.js glob scan
-        return {
-          content: [{ type: 'text', text: `⚠️ ripgrep (rg) is not available. Install it with: brew install ripgrep\nCannot perform distilled grep without rg.` }],
-          isError: true
-        };
-      }
+      const rgResult = spawnSync('rg', rgArgs, { encoding: 'utf-8', maxBuffer: 1024 * 512 });
 
-      if (matchingFiles.length === 0) {
-        return {
-          content: [{ type: 'text', text: `ℹ️ [CONTEXTGUARD GREP] No matches for "${pattern}"` }]
-        };
-      }
-
-      // For each matching file: get matching lines + structural outline
-      const results: string[] = [
-        `<!-- [CONTEXTGUARD GREP] Pattern: "${pattern}" | ${matchingFiles.length} matching files -->`,
-        ''
-      ];
-
-      for (const filePath of matchingFiles) {
-        const ext = path.extname(filePath);
-        const relPath = path.relative(process.cwd(), filePath);
-
-        // Get matching lines with context
-        let matchLines = '';
-        try {
+      if (rgResult.error && (rgResult.error as any).code === 'ENOENT') {
+        // ripgrep is not installed — use pure Node.js fallback!
+        const nodeMatches = safeNodeGrep(searchDir, pattern, !!is_regex, include, 20);
+        matchingEntries = nodeMatches.map(m => ({
+          filePath: m.filePath,
+          matchLines: m.matches.slice(0, 5).join('\n')
+        }));
+      } else if (rgResult.status === 0 && rgResult.stdout) {
+        const filePaths = rgResult.stdout.trim().split('\n').filter(Boolean).slice(0, 20);
+        for (const fp of filePaths) {
           const matchArgs = [
             '--line-number', '--no-heading', '--color=never',
             '--max-count=5', '--context=1'
           ];
           if (!is_regex) matchArgs.push('--fixed-strings');
           if (include) matchArgs.push('--glob', include);
-          matchArgs.push('--', pattern, filePath);
-          matchLines = execSync(`rg ${matchArgs.map(a => JSON.stringify(a)).join(' ')}`, {
-            encoding: 'utf-8',
-            maxBuffer: 1024 * 64
-          }).trim();
-        } catch {
-          matchLines = '(error reading match lines)';
+          matchArgs.push('--', pattern, fp);
+
+          const matchRes = spawnSync('rg', matchArgs, { encoding: 'utf-8', maxBuffer: 1024 * 64 });
+          matchingEntries.push({
+            filePath: fp,
+            matchLines: (matchRes.stdout || '').trim() || '(matches found)'
+          });
         }
+      } else if (rgResult.status === 1) {
+        // No matches found by ripgrep
+        return {
+          content: [{ type: 'text', text: `ℹ️ [CONTEXTGUARD GREP] No matches for "${pattern}" in ${searchDir}` }]
+        };
+      }
 
-        // Get structural outline
-        const raw = fs.readFileSync(filePath, 'utf-8');
-        const skeleton = extractCodeSkeleton(raw, ext);
-        const stat = fs.statSync(filePath);
-        const totalLines = raw.split('\n').length;
+      if (matchingEntries.length === 0) {
+        return {
+          content: [{ type: 'text', text: `ℹ️ [CONTEXTGUARD GREP] No matches for "${pattern}" in ${searchDir}` }]
+        };
+      }
 
-        results.push(`### ${relPath} (${totalLines} lines, ${(stat.size / 1024).toFixed(1)} KB)`);
+      // Format results with outlines
+      const results: string[] = [
+        `<!-- [CONTEXTGUARD GREP] Pattern: "${pattern}" | ${matchingEntries.length} matching files -->`,
+        ''
+      ];
+
+      for (const entry of matchingEntries) {
+        const ext = path.extname(entry.filePath);
+        const relPath = path.relative(process.cwd(), entry.filePath);
+
+        let skeleton: string | null = null;
+        let totalLines = 0;
+        let sizeBytes = 0;
+
+        try {
+          const raw = fs.readFileSync(entry.filePath, 'utf-8');
+          skeleton = extractCodeSkeleton(raw, ext);
+          totalLines = raw.split('\n').length;
+          sizeBytes = fs.statSync(entry.filePath).size;
+        } catch {}
+
+        results.push(`### ${relPath} (${totalLines} lines, ${(sizeBytes / 1024).toFixed(1)} KB)`);
         results.push('**Matches:**');
         results.push('```');
-        results.push(matchLines);
+        results.push(entry.matchLines);
         results.push('```');
         if (skeleton) {
           results.push('**Structural outline:**');
@@ -343,7 +487,7 @@ server.registerTool(
         results.push('');
       }
 
-      if (matchingFiles.length === 20) {
+      if (matchingEntries.length === 20) {
         results.push('> ⚠️ Results capped at 20 files. Narrow your search with a more specific pattern or --include glob.');
       }
 

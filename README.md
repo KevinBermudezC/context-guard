@@ -149,13 +149,22 @@ That's it! When Claude Code attempts to run `Read` (or raw bash reads like `cat 
 
 ContextGuard ships a built-in **Model Context Protocol (MCP) server** compatible with any MCP host: **Cursor, Windsurf, Claude Desktop, Antigravity (AGY), Zed**, and more.
 
-The MCP server exposes three tools:
+The MCP server exposes tools, passive resources, and optimized prompt templates:
+
+### 🛠️ Tools
 
 | Tool | Description | Cost | Latency |
 |---|---|---|---|
 | `read_file_safe` | Protected file read — passthrough for small files, AST skeleton for large ones, block for binaries/lockfiles | **\$0.00** | **< 5ms** |
 | `inspect_outline` | Instant structural outline (classes, functions, types, signals) with line numbers | **\$0.00** | **< 5ms** |
-| `grep_distilled` | Pattern search returning only structural context around matches, never full file dumps | **\$0.00** | **< 50ms** |
+| `grep_distilled` | Pattern search returning only structural context around matches (uses ripgrep with pure Node fallback) | **\$0.00** | **< 50ms** |
+
+### 📦 Resources & Prompts
+
+| Type | URI / Name | Description |
+|---|---|---|
+| **Resource** | `contextguard://config` | Live inspection of active thresholds, bypass formats, and worker provider |
+| **Prompt** | `investigate_codebase_safely` | System prompt template enforcing token preservation and outline-first navigation |
 
 ### Install & Run
 
