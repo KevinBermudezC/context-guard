@@ -33,6 +33,10 @@ interface JsonRpcResponse {
 function sendRequest(proc: ChildProcessWithoutNullStreams, request: JsonRpcRequest): Promise<JsonRpcResponse> {
   return new Promise((resolve, reject) => {
     let buffer = '';
+    const onError = (err: Error) => {
+      cleanup();
+      reject(err);
+    };
     const onData = (chunk: Buffer) => {
       buffer += chunk.toString();
       const lines = buffer.split('\n');
@@ -41,7 +45,7 @@ function sendRequest(proc: ChildProcessWithoutNullStreams, request: JsonRpcReque
         try {
           const parsed = JSON.parse(line) as JsonRpcResponse;
           if (parsed.id === request.id) {
-            proc.stdout.removeListener('data', onData);
+            cleanup();
             resolve(parsed);
             return;
           }
@@ -51,11 +55,17 @@ function sendRequest(proc: ChildProcessWithoutNullStreams, request: JsonRpcReque
       }
       buffer = lines[lines.length - 1] ?? '';
     };
+
+    const cleanup = () => {
+      proc.stdout.removeListener('data', onData);
+      proc.removeListener('error', onError);
+    };
+
     proc.stdout.on('data', onData);
-    proc.on('error', reject);
+    proc.on('error', onError);
     proc.stdin.write(JSON.stringify(request) + '\n');
     setTimeout(() => {
-      proc.stdout.removeListener('data', onData);
+      cleanup();
       reject(new Error(`Timeout waiting for response to request id=${request.id}`));
     }, 5000);
   });
@@ -246,22 +256,50 @@ describe('ContextGuard MCP Server (Phase 2)', () => {
     fs.rmSync(tmpDir, { recursive: true });
   });
 
-  // ── grep_distilled ──────────────────────────────────────────────────────────
-
-  it('grep_distilled: should return no-match message when pattern is not found', async () => {
+  it('grep_distilled: should find matches and extract structural outline via ripgrep or node fallback', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-mcp-'));
-    fs.writeFileSync(path.join(tmpDir, 'a.ts'), 'export const x = 1;');
+    const testFile = path.join(tmpDir, 'controller.ts');
+    fs.writeFileSync(testFile, [
+      'export class UserController {',
+      '  async findUserById(id: string) {',
+      '    const targetId = id;',
+      '    return targetId;',
+      '  }',
+      '}'
+    ].join('\n'));
 
     const res = await sendRequest(proc, req('tools/call', {
       name: 'grep_distilled',
-      arguments: { pattern: 'PATTERN_THAT_DOES_NOT_EXIST_XYZ123', directory: tmpDir }
+      arguments: { pattern: 'targetId', directory: tmpDir }
     }));
 
     assert.ok(!res.error, `Unexpected error: ${JSON.stringify(res.error)}`);
     const result = res.result as { content: Array<{ type: string; text: string }> };
     const text = result.content[0].text;
-    assert.ok(text.includes('No matches') || text.includes('not available'), 'Must indicate no matches');
+    assert.ok(text.includes('controller.ts'), 'Must find controller.ts file');
+    assert.ok(text.includes('targetId'), 'Must contain match line');
 
     fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  // ── Resources & Prompts (MCP Best Practices) ────────────────────────────────
+
+  it('resources: should list contextguard://config and read active configuration', async () => {
+    const listRes = await sendRequest(proc, req('resources/list'));
+    assert.ok(!listRes.error, `Unexpected error: ${JSON.stringify(listRes.error)}`);
+    const listResult = listRes.result as { resources: Array<{ uri: string }> };
+    assert.ok(listResult.resources.some((r) => r.uri === 'contextguard://config'), 'Must list config resource');
+
+    const readRes = await sendRequest(proc, req('resources/read', { uri: 'contextguard://config' }));
+    assert.ok(!readRes.error, `Unexpected error: ${JSON.stringify(readRes.error)}`);
+    const readResult = readRes.result as { contents: Array<{ text: string }> };
+    assert.ok(readResult.contents[0].text.includes('maxLinesThreshold'), 'Must return valid config JSON');
+  });
+
+  it('prompts: should list investigate_codebase_safely prompt', async () => {
+    const res = await sendRequest(proc, req('prompts/list'));
+    assert.ok(!res.error, `Unexpected error: ${JSON.stringify(res.error)}`);
+    const result = res.result as { prompts: Array<{ name: string }> };
+    assert.ok(result.prompts.some((p) => p.name === 'investigate_codebase_safely'), 'Must expose prompt template');
   });
 });
