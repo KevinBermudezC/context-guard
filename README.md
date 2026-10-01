@@ -50,7 +50,7 @@ flowchart TD
     F -- "YES (Large un-scoped read)" --> G["🛡️ <b>CONTEXTGUARD SHUNT TRIGGER</b>"]
     
     G --> H["<b>Tier 0: Local AST Skeletonizer</b><br>TS, JS, Python, Go, Rust, Java, C#<br>+ Svelte 5, Vue 3, Angular, Astro SFCs<br>• Collapses import walls (&gt;5 imports)<br>• Cost: <b>$0.00</b> | Latency: <b>&lt; 5ms</b>"]
-    G --> I["<b>Tier 1: Worker Model</b><br>Logs, JSON, Markdown, Docs<br>• Gemini 2.5 Flash / Local Ollama<br>• Cost: <b>~95% cheaper</b> than Frontier"]
+    G --> I["<b>Tier 1: Worker Model</b><br>Logs, JSON, Markdown, Docs<br>• Gemini 3.8 Flash / Local Ollama<br>• Cost: <b>~95% cheaper</b> than Frontier"]
     
     H --> J["🛑 <b>HARD BLOCK (Exit Code 2)</b><br>Emits line-tagged skeleton <code>[L89]</code> to stderr"]
     I --> J
@@ -255,7 +255,7 @@ Customize thresholds and worker models via environment variables:
 | `CONTEXT_GUARD_MAX_LINES` | `300` | Maximum lines allowed for un-scoped direct reads |
 | `CONTEXT_GUARD_MAX_BYTES` | `25600` | Maximum file size in bytes (~25 KB) |
 | `CONTEXT_GUARD_PROVIDER` | `skeleton` | Worker mode: `skeleton` (Tier 0 AST), `gemini`, `ollama`, or `openai` |
-| `GEMINI_API_KEY` | - | API key for Gemini 2.5 Flash worker |
+| `GEMINI_API_KEY` | - | API key for Gemini 3.8 Flash worker |
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model name |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama local endpoint |
 | `OLLAMA_MODEL` | `qwen2.5-coder:7b` | Model to use in Ollama |
