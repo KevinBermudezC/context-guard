@@ -8,6 +8,8 @@
 
 > **Intelligent context admission control & token optimization for Claude Code, Cursor, and Agentic AI workflows.**
 
+> 🐶 **Built on Dogfooding:** ContextGuard se construyó a sí mismo — ahorró más de 500,000 tokens durante su propio ciclo de desarrollo medido con su propio ledger de FinOps.
+
 Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier reasoning models (Claude Opus 5, Claude Sonnet 5, GPT-6 Astra), extracting structural signatures or delegating summarization to ultra-fast worker models (Gemini 3.8 Flash, local SLMs).
 
 ---
@@ -166,18 +168,36 @@ The MCP server exposes tools, passive resources, and optimized prompt templates:
 | **Resource** | `contextguard://config` | Live inspection of active thresholds, bypass formats, and worker provider |
 | **Prompt** | `investigate_codebase_safely` | System prompt template enforcing token preservation and outline-first navigation |
 
-### Install & Run
+### How to Install & Configure ContextGuard MCP
+
+The Model Context Protocol (MCP) server allows AI editors to automatically call `read_file_safe`, `inspect_outline`, and `grep_distilled`.
+
+#### 1. Instant Run (No Installation Required)
+
+You can run the server directly via `npx` (it will download the latest binary on the fly):
 
 ```bash
-# One-shot (no install):
 npx -y -p @kevinbermudezc/context-guard context-guard-mcp
+```
 
-# Or as a local dependency:
+Or install it globally/locally in your repository:
+
+```bash
+# Global install:
+npm install -g @kevinbermudezc/context-guard
+
+# Or as a project devDependency:
 pnpm add -D @kevinbermudezc/context-guard
-node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
 ```
 
-### 🖱️ Cursor (`~/.cursor/mcp.json`)
+---
+
+#### 2. Configure Your AI Coding Assistant
+
+##### 🖱️ Cursor
+1. Open **Cursor Settings** (`Cmd + ,` on macOS or `Ctrl + ,` on Windows/Linux).
+2. Navigate to **Features > MCP Servers** or open `~/.cursor/mcp.json`.
+3. Add the `context-guard` entry:
 
 ```json
 {
@@ -190,7 +210,26 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
 }
 ```
 
-### 🤖 Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+##### 🤖 Claude Desktop
+1. Open the Claude Desktop configuration file:
+   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+2. Add the `context-guard` definition:
+
+```json
+{
+  "mcpServers": {
+    "context-guard": {
+      "command": "npx",
+      "args": ["-y", "-p", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+    }
+  }
+}
+```
+3. Restart Claude Desktop. You will see `read_file_safe`, `inspect_outline`, and `grep_distilled` under the 🔌 icon.
+
+##### 🪁 Antigravity / Google AGY
+1. In your project workspace, create or edit `.agents/mcp.json` (or globally in `~/.gemini/config/mcp_config.json`):
 
 ```json
 {
@@ -203,7 +242,8 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
 }
 ```
 
-### 🪁 Antigravity / Google AGY (`.agents/mcp.json` or `~/.config/agy/mcp.json`)
+##### 🏄 Windsurf (Cascade) & Zed
+Add to your respective MCP configuration file:
 
 ```json
 {
@@ -216,7 +256,7 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
 }
 ```
 
-> **Note:** Configuration examples are also available in [`examples/mcp-configs/`](./examples/mcp-configs/).
+> 📁 Ready-to-use configuration files are available in [`examples/mcp-configs/`](./examples/mcp-configs/).
 
 ---
 
