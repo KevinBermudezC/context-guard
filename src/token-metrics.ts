@@ -14,9 +14,9 @@ export interface TokenComparison {
   tokensSaved: number;
   percentageSaved: number;
   dollarsSaved: {
-    claudeOpus: number;   // $15.00 / M tokens
-    claudeSonnet: number; // $3.00 / M tokens
-    gpt4o: number;        // $2.50 / M tokens
+    claudeOpus5: number;   // $15.00 / M tokens (Claude Opus 5)
+    claudeSonnet5: number; // $3.00 / M tokens (Claude Sonnet 5)
+    gpt5Astra: number;     // $2.50 / M tokens (GPT-5.6 / GPT-5 Astra)
   };
 }
 
@@ -38,7 +38,7 @@ export interface AggregatedStats {
   totalTokensSaved: number;
   totalDollarsSavedOpus: number;
   totalDollarsSavedSonnet: number;
-  totalDollarsSavedGpt4o: number;
+  totalDollarsSavedGpt5: number;
   events: MetricEvent[];
 }
 
@@ -74,9 +74,9 @@ export function calculateFinOps(rawText: string, guardedText: string): TokenComp
   const percentageSaved = rawTokens > 0 ? (tokensSaved / rawTokens) * 100 : 0;
   
   // Pricing per 1M input tokens
-  const OPUS_PRICE_PER_M = 15.00;
-  const SONNET_PRICE_PER_M = 3.00;
-  const GPT4O_PRICE_PER_M = 2.50;
+  const OPUS5_PRICE_PER_M = 15.00;
+  const SONNET5_PRICE_PER_M = 3.00;
+  const GPT5_PRICE_PER_M = 2.50;
 
   return {
     rawBytes,
@@ -86,9 +86,9 @@ export function calculateFinOps(rawText: string, guardedText: string): TokenComp
     tokensSaved,
     percentageSaved: parseFloat(percentageSaved.toFixed(1)),
     dollarsSaved: {
-      claudeOpus: parseFloat(((tokensSaved / 1_000_000) * OPUS_PRICE_PER_M).toFixed(4)),
-      claudeSonnet: parseFloat(((tokensSaved / 1_000_000) * SONNET_PRICE_PER_M).toFixed(4)),
-      gpt4o: parseFloat(((tokensSaved / 1_000_000) * GPT4O_PRICE_PER_M).toFixed(4))
+      claudeOpus5: parseFloat(((tokensSaved / 1_000_000) * OPUS5_PRICE_PER_M).toFixed(4)),
+      claudeSonnet5: parseFloat(((tokensSaved / 1_000_000) * SONNET5_PRICE_PER_M).toFixed(4)),
+      gpt5Astra: parseFloat(((tokensSaved / 1_000_000) * GPT5_PRICE_PER_M).toFixed(4))
     }
   };
 }
@@ -165,7 +165,7 @@ export function getAggregatedStats(): AggregatedStats {
     totalTokensSaved,
     totalDollarsSavedOpus: parseFloat(((totalTokensSaved / 1_000_000) * 15.00).toFixed(2)),
     totalDollarsSavedSonnet: parseFloat(((totalTokensSaved / 1_000_000) * 3.00).toFixed(2)),
-    totalDollarsSavedGpt4o: parseFloat(((totalTokensSaved / 1_000_000) * 2.50).toFixed(2)),
+    totalDollarsSavedGpt5: parseFloat(((totalTokensSaved / 1_000_000) * 2.50).toFixed(2)),
     events
   };
 }

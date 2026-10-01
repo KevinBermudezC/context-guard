@@ -22,8 +22,9 @@ describe('Token Metrics & FinOps (Fase 5 Preview)', () => {
     const fin = calculateFinOps(rawContent, skeletonContent);
     assert.ok(fin.tokensSaved > 0, 'Must have saved tokens');
     assert.ok(fin.percentageSaved > 80, `Expected >80% savings, got ${fin.percentageSaved}%`);
-    assert.ok(fin.dollarsSaved.claudeSonnet >= 0);
-    assert.ok(fin.dollarsSaved.claudeOpus >= 0);
+    assert.ok(fin.dollarsSaved.claudeSonnet5 >= 0);
+    assert.ok(fin.dollarsSaved.claudeOpus5 >= 0);
+    assert.ok(fin.dollarsSaved.gpt5Astra >= 0);
   });
 
   it('should record metric events and aggregate stats', () => {
