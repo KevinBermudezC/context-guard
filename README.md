@@ -161,7 +161,7 @@ The MCP server exposes three tools:
 
 ```bash
 # One-shot (no install):
-npx -y @kevinbermudezc/context-guard context-guard-mcp
+npx -y -p @kevinbermudezc/context-guard context-guard-mcp
 
 # Or as a local dependency:
 pnpm add -D @kevinbermudezc/context-guard
@@ -175,7 +175,7 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
   "mcpServers": {
     "context-guard": {
       "command": "npx",
-      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+      "args": ["-y", "-p", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
     }
   }
 }
@@ -188,7 +188,7 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
   "mcpServers": {
     "context-guard": {
       "command": "npx",
-      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+      "args": ["-y", "-p", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
     }
   }
 }
@@ -201,7 +201,7 @@ node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
   "mcpServers": {
     "context-guard": {
       "command": "npx",
-      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+      "args": ["-y", "-p", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
     }
   }
 }
