@@ -8,7 +8,7 @@
 
 > **Intelligent context admission control & token optimization for Claude Code, Cursor, and Agentic AI workflows.**
 
-> 🐶 **Built on Dogfooding:** ContextGuard se construyó a sí mismo — ahorró más de 500,000 tokens durante su propio ciclo de desarrollo medido con su propio ledger de FinOps.
+> 🐶 **Built on Dogfooding:** ContextGuard built itself — saving over 500,000 tokens during its own development lifecycle, verified by its internal FinOps ledger.
 
 Stop burning expensive tokens and degrading reasoning accuracy. `ContextGuard` intercepts un-scoped, large file reads before they enter your frontier reasoning models (Claude Opus 5.5, Claude Sonnet 5.5, GPT-6 Astra), extracting structural signatures or delegating summarization to ultra-fast worker models (Gemini 3.8 Flash, local SLMs).
 
@@ -260,7 +260,7 @@ Add to your respective MCP configuration file:
 
 ---
 
-## 🛠️ CLI & FinOps Telemetry (v1.3.0)
+## 🛠️ CLI & FinOps Telemetry (v1.3.1)
 
 ContextGuard includes a beautiful developer CLI with built-in token savings and financial ROI telemetry:
 
