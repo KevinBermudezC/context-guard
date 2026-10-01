@@ -41,6 +41,7 @@ export interface ProcessFileResult {
   provider?: string;
   warning?: string;
   error?: string;
+  metrics?: import('./token-metrics.js').TokenComparison;
 }
 
 export interface ClaudeToolInput {
