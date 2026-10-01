@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "context-guard": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@kevinbermudezc/context-guard@latest",
+        "context-guard-mcp"
+      ]
+    }
+  }
+}

@@ -145,7 +145,73 @@ That's it! When Claude Code attempts to run `Read` (or raw bash reads like `cat 
 
 ---
 
-## 🛠️ CLI Usage
+## 🔌 MCP Server — Universal Agent Integration (Phase 2)
+
+ContextGuard ships a built-in **Model Context Protocol (MCP) server** compatible with any MCP host: **Cursor, Windsurf, Claude Desktop, Antigravity (AGY), Zed**, and more.
+
+The MCP server exposes three tools:
+
+| Tool | Description | Cost | Latency |
+|---|---|---|---|
+| `read_file_safe` | Protected file read — passthrough for small files, AST skeleton for large ones, block for binaries/lockfiles | **\$0.00** | **< 5ms** |
+| `inspect_outline` | Instant structural outline (classes, functions, types, signals) with line numbers | **\$0.00** | **< 5ms** |
+| `grep_distilled` | Pattern search returning only structural context around matches, never full file dumps | **\$0.00** | **< 50ms** |
+
+### Install & Run
+
+```bash
+# One-shot (no install):
+npx -y @kevinbermudezc/context-guard context-guard-mcp
+
+# Or as a local dependency:
+pnpm add -D @kevinbermudezc/context-guard
+node ./node_modules/@kevinbermudezc/context-guard/dist/bin/mcp-server.js
+```
+
+### 🖱️ Cursor (`~/.cursor/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "context-guard": {
+      "command": "npx",
+      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+    }
+  }
+}
+```
+
+### 🤖 Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+
+```json
+{
+  "mcpServers": {
+    "context-guard": {
+      "command": "npx",
+      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+    }
+  }
+}
+```
+
+### 🪁 Antigravity / Google AGY (`.agents/mcp.json` or `~/.config/agy/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "context-guard": {
+      "command": "npx",
+      "args": ["-y", "@kevinbermudezc/context-guard@latest", "context-guard-mcp"]
+    }
+  }
+}
+```
+
+> **Note:** Configuration examples are also available in [`examples/mcp-configs/`](./examples/mcp-configs/).
+
+---
+
+## 🛠️ CLI Usage (Claude Code Hook)
 
 You can also use ContextGuard directly as a command-line tool:
 

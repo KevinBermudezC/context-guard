@@ -44,19 +44,21 @@ This document outlines the strategic roadmap for **ContextGuard**, evolving from
 
 ---
 
-### Phase 2: Universal Model Context Protocol (MCP) Server (Target: v1.1.0)
+### Phase 2: Universal Model Context Protocol (MCP) Server (✅ Completed - v1.2.0)
 The **Model Context Protocol (MCP)** provides a universal bridge to connect ContextGuard with multiple coding agents simultaneously.
 
-- [ ] **Dedicated MCP Package:** Publish `@kevinbermudezc/context-guard-mcp`.
-- [ ] **Standardized Tools:**
-  - `read_file_safe`: Automated shunting for files exceeding safety thresholds.
-  - `inspect_outline`: Instant structural signatures and interface outlines (< 5ms).
-  - `grep_distilled`: Pattern search that strips internal implementations and isolates matches.
-- [ ] **Immediate Agent Compatibility:** Unlocks out-of-the-box support for:
-  - **Cursor**
-  - **Windsurf (Cascade)**
-  - **Zed**
-  - **Claude Desktop**
+- [x] **MCP Server Binary:** `context-guard-mcp` stdio server built on `@modelcontextprotocol/server@2.2.0` (2026-07-28 spec).
+- [x] **Standardized Tools:**
+  - `read_file_safe`: Protected file read — passthrough for small files, AST skeleton for large ones, hard block for binaries/lockfiles.
+  - `inspect_outline`: Instant structural signatures and interface outlines (< 5ms, $0.00).
+  - `grep_distilled`: Pattern search that strips internal implementations and isolates structural context around matches.
+- [x] **Immediate Agent Compatibility:** Out-of-the-box support via `npx -y @kevinbermudezc/context-guard context-guard-mcp`:
+  - **Cursor** (`~/.cursor/mcp.json`)
+  - **Claude Desktop** (`claude_desktop_config.json`)
+  - **Antigravity / Google AGY** (`.agents/mcp.json`)
+  - **Windsurf (Cascade)** and **Zed** (via standard MCP config)
+- [x] **Integration Examples:** [`examples/mcp-configs/`](./examples/mcp-configs/) directory with ready-to-use config files.
+- [x] **Test Coverage:** 8 MCP server integration tests via JSON-RPC child process spawning (33/33 total tests passing).
 
 ---
 
