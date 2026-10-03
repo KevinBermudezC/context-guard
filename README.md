@@ -260,6 +260,37 @@ Add to your respective MCP configuration file:
 
 ---
 
+## 🤖 Native Agent Adapters & Automatic Setup (Phase 3)
+
+ContextGuard is natively compatible with **Google Antigravity (AGY)**, **Cursor**, and **Claude Code**. Instead of manually configuring JSON files, you can initialize your workspace with a single command:
+
+```bash
+# Auto-detects and provisions rules, skills, and MCP for ALL agents
+npx @kevinbermudezc/context-guard init
+
+# Or target a specific coding environment:
+npx @kevinbermudezc/context-guard init cursor
+npx @kevinbermudezc/context-guard init antigravity
+npx @kevinbermudezc/context-guard init claude
+```
+
+### 1. 🪁 Google Antigravity (AGY) Integration
+When running `context-guard init antigravity` (or configuring manually):
+- **Project Rule (`.agents/rules/context-guard.md`)**: Instructs Antigravity agents to never dump large files (>300 lines) and prioritize `inspect_outline` and `read_file_safe`.
+- **Custom Skill (`.agents/skills/context-guard/SKILL.md`)**: Activates progressive disclosure runbooks whenever the agent explores large components or unmapped codebases.
+- **Lifecycle Interception Hook (`.agents/hooks.json`)**: Intercepts `view_file` calls using the native JSON protocol (`{ decision: "deny", reason: "..." }`) to block raw lockfiles or un-scoped reads.
+
+### 2. 🖱️ Cursor IDE Integration
+When running `context-guard init cursor`:
+- **Cursor Rule (`.cursor/rules/context-guard.mdc`)**: Configured with `alwaysApply: true` to prevent Composer from flooding its reasoning window with raw >300-line file dumps.
+- **MCP Config (`.cursor/mcp.json`)**: Seamlessly connects Cursor Composer to `read_file_safe`, `inspect_outline`, and `grep_distilled`.
+
+### 3. 🤖 Claude Code Integration
+When running `context-guard init claude`:
+- **PreToolUse Hook (`.claude/settings.json`)**: Intercepts `Read`, `View`, and un-piped `Bash` commands (`cat file.ts`), returning `Exit Code 2` with an AST skeleton and line-tagged signatures in `stderr`.
+
+---
+
 ## 🛠️ CLI & FinOps Telemetry (v1.4.0)
 
 ContextGuard includes a beautiful developer CLI with built-in token savings, financial ROI telemetry, and privacy controls:
