@@ -1,0 +1,25 @@
+---
+description: ContextGuard FinOps and Context Window Admission Control
+globs: *
+alwaysApply: true
+---
+
+# 🛡️ ContextGuard Rule for Cursor (Composer & Chat)
+
+You MUST follow these context admission control and token optimization rules to protect the model context window and prevent latency degradation from massive files:
+
+## 1. Zero Direct Reads for Large Files (>300 lines)
+- **NEVER** read files larger than 300 lines without line constraints (`start_line`, `end_line`).
+- Instead of using default read tools, prioritize calling ContextGuard MCP tools:
+  - Call `read_file_safe(file_path: "path/to/file")` to automatically receive an AST structural skeleton if the file is large (>300 lines).
+  - Call `inspect_outline(file_path: "path/to/file")` (< 5ms, 0 tokens) to inspect classes, methods, and types with their exact line tags `[L#]`.
+  - Once the relevant code block is located, read only the target slice:
+    `read_file_safe(file_path: "path/to/file", start_line: 120, end_line: 180)`
+
+## 2. Pattern Searching
+- When searching for symbols or references across files, use `grep_distilled(pattern: "myFunction")`.
+- It isolates only matching signatures and structural surroundings rather than returning huge dumps of implementation code.
+
+## 3. Binaries and Lockfiles
+- Do NOT read `package-lock.json`, `pnpm-lock.yaml`, `bun.lockb`, or minified bundles (`.min.js`).
+- Use CLI commands (`npm ls`, `pnpm why`, `cat package.json`) to inspect dependencies.

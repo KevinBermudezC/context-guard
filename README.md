@@ -265,6 +265,13 @@ Add to your respective MCP configuration file:
 ContextGuard includes a beautiful developer CLI with built-in token savings, financial ROI telemetry, and privacy controls:
 
 ```bash
+# Automatically configure rules and MCP for all agents in your repository
+npx @kevinbermudezc/context-guard init
+
+# Target specific agent (antigravity, cursor, or claude)
+npx @kevinbermudezc/context-guard init cursor
+npx @kevinbermudezc/context-guard init antigravity
+
 # View file through ContextGuard (shows FinOps savings card if shunted)
 npx @kevinbermudezc/context-guard src/large-service.ts
 
