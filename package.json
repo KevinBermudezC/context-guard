@@ -52,7 +52,7 @@
   "bugs": {
     "url": "https://github.com/KevinBermudezC/context-guard/issues"
   },
-  "homepage": "https://github.com/KevinBermudezC/context-guard#readme",
+  "homepage": "https://contextguardweb.vercel.app",
   "engines": {
     "node": ">=18.0.0"
   },
