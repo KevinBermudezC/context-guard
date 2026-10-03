@@ -11,6 +11,7 @@ import {
   disableTelemetry,
   getAnonymousId
 } from '../src/telemetry.js';
+import { getUpdateNotice } from '../src/update-notifier.js';
 import { VERSION } from '../src/version.js';
 
 // ─── Minimal ANSI Formatting (Clean, Terminal-Agnostic) ───────────────────────
@@ -442,6 +443,16 @@ function printExecutionCard(filePath: string, result: any): void {
 
 async function runCli(): Promise<void> {
   const args = process.argv.slice(2);
+
+  // Non-blocking update notification check (silent and clean)
+  const isJson = args.includes('--json');
+  const isWatch = args.includes('--watch') || args.includes('-w');
+  if (!isJson && !isWatch) {
+    const notice = getUpdateNotice(VERSION);
+    if (notice) {
+      console.log(`\n${notice.message}\n`);
+    }
+  }
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     printHelp();
