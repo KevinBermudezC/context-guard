@@ -291,7 +291,7 @@ When running `context-guard init claude`:
 
 ---
 
-## 🛠️ CLI & FinOps Telemetry (v1.4.0)
+## 🛠️ CLI & FinOps Telemetry (v1.5.0)
 
 ContextGuard includes a beautiful developer CLI with built-in token savings, financial ROI telemetry, and privacy controls:
 

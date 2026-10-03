@@ -115,7 +115,7 @@ describe('ContextGuard MCP Server (Phase 2)', () => {
     assert.ok(result.serverInfo, 'Must include serverInfo');
     const info = result.serverInfo as Record<string, string>;
     assert.strictEqual(info.name, 'context-guard');
-    assert.strictEqual(info.version, '1.4.0');
+    assert.strictEqual(info.version, '1.5.0');
   });
 
   it('should list exactly 3 registered tools', async () => {
