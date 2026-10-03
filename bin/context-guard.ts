@@ -24,7 +24,7 @@ const c = {
   gray: '\x1b[90m'
 };
 
-const VERSION = '1.3.1';
+const VERSION = '1.3.2';
 
 // ─── Help Menu ────────────────────────────────────────────────────────────────
 
@@ -147,11 +147,8 @@ function auditDirectory(targetDir: string): void {
 // ─── Real-Time Live Watcher ───────────────────────────────────────────────────
 
 function runRealtimeWatch(): void {
-  // Clear screen
-  process.stdout.write('\x1b[2J\x1b[0;0H');
-
   const render = () => {
-    process.stdout.write('\x1b[0;0H'); // cursor to top-left
+    console.clear();
     const stats = getAggregatedStats();
     const time = new Date().toLocaleTimeString();
 
@@ -174,10 +171,15 @@ function runRealtimeWatch(): void {
 
     const recent = stats.events.slice(-6).reverse();
     if (recent.length === 0) {
-      console.log(`    ${c.dim}(Sin eventos recientes. Usa Claude Code o el CLI para registrar tráfico)${c.reset}\n`);
+      console.log(`    ${c.dim}(Sin eventos recientes. Usa Claude Code, Cursor o MCP para registrar tráfico)${c.reset}\n`);
     } else {
+      const badges: Record<string, string> = {
+        hook: `${c.magenta}[HOOK]${c.reset}`,
+        mcp: `${c.cyan}[MCP]${c.reset} `,
+        cli: `${c.blue}[CLI]${c.reset} `
+      };
       for (const ev of recent) {
-        const badge = ev.source === 'hook' ? `${c.magenta}[HOOK]${c.reset}` : `${c.blue}[CLI]${c.reset} `;
+        const badge = badges[ev.source] || `${c.blue}[CLI]${c.reset} `;
         const fName = ev.filePath.length > 28 ? '...' + ev.filePath.slice(-25) : ev.filePath.padEnd(28);
         console.log(`    ${c.dim}${ev.timestamp.slice(11, 19)}${c.reset} ${badge} ${c.white}${fName}${c.reset} ${c.green}+${ev.tokensSaved.toLocaleString()} tokens${c.reset} ${c.gray}(~$${ev.dollarsSavedSonnet})${c.reset}`);
       }
