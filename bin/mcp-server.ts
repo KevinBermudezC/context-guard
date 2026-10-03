@@ -20,16 +20,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
-import { processWithContextGuard, calculateFinOps, recordMetricEvent } from '../src/index.js';
+import { processWithContextGuard, calculateFinOps, recordMetricEvent, sendTelemetryPing } from '../src/index.js';
 import { CONFIG } from '../src/config.js';
 import { classifyFile } from '../src/file-classifier.js';
 import { extractCodeSkeleton, isSupportedExtension } from '../src/skeletonizer.js';
+import { VERSION } from '../src/version.js';
 import { spawnSync } from 'node:child_process';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SERVER_NAME = 'context-guard';
-const SERVER_VERSION = '1.3.2';
+const SERVER_VERSION = VERSION;
 
 // Native Claude Code / multimodal formats — allow full passthrough
 const NATIVE_MEDIA_EXTS = new Set([
@@ -380,6 +381,8 @@ server.registerTool(
             tokensSaved: metrics.tokensSaved,
             dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet55
           });
+
+          sendTelemetryPing('mcp', 'outline_inspected', SERVER_VERSION, metrics.tokensSaved);
         }
       }
 

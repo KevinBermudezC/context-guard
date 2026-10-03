@@ -5,6 +5,13 @@ import fs from 'node:fs';
 import { processWithContextGuard } from '../src/index.js';
 import { extractCodeSkeleton } from '../src/skeletonizer.js';
 import { getAggregatedStats, resetMetrics, calculateFinOps } from '../src/token-metrics.js';
+import {
+  isTelemetryEnabled,
+  enableTelemetry,
+  disableTelemetry,
+  getAnonymousId
+} from '../src/telemetry.js';
+import { VERSION } from '../src/version.js';
 
 // ─── Minimal ANSI Formatting (Clean, Terminal-Agnostic) ───────────────────────
 
@@ -24,8 +31,6 @@ const c = {
   gray: '\x1b[90m'
 };
 
-const VERSION = '1.3.2';
-
 // ─── Help Menu ────────────────────────────────────────────────────────────────
 
 function printHelp(): void {
@@ -36,11 +41,15 @@ function printHelp(): void {
   ${c.bold}USAGE${c.reset}
     ${c.green}context-guard${c.reset} <file-path> [options]
     ${c.green}context-guard stats${c.reset} [path] [options]
+    ${c.green}context-guard telemetry${c.reset} <status|enable|disable>
 
   ${c.bold}COMMANDS${c.reset}
     ${c.cyan}stats${c.reset} [dir]          Muestra la telemetría acumulada o audita un directorio
     ${c.cyan}stats --watch${c.reset}        Monitor interactivo de consumo y ahorro en tiempo real
     ${c.cyan}stats --reset${c.reset}        Reinicia el historial de métricas locales
+    ${c.cyan}telemetry status${c.reset}     Muestra el estado de la telemetría anónima y el ID local
+    ${c.cyan}telemetry enable${c.reset}     Habilita el envío de métricas anónimas
+    ${c.cyan}telemetry disable${c.reset}    Deshabilita por completo la telemetría anónima
 
   ${c.bold}OPTIONS${c.reset}
     ${c.yellow}-q, --query <text>${c.reset}   Filtro semántico para el modelo worker (Gemini/Ollama)
@@ -293,6 +302,41 @@ async function runCli(): Promise<void> {
   if (args[0] === 'stats') {
     printStats(args);
     return;
+  }
+
+  // Subcommand: telemetry
+  if (args[0] === 'telemetry') {
+    const action = args[1] || 'status';
+    if (action === 'status') {
+      const enabled = isTelemetryEnabled();
+      const anonId = getAnonymousId();
+      console.log(`
+  ${c.cyan}🛡️  ${c.bold}ContextGuard Telemetry Status${c.reset}
+  ${c.gray}──────────────────────────────────────────${c.reset}
+  ${c.bold}Estado:${c.reset}            ${enabled ? `${c.green}● Habilitada (Opt-in/Default)${c.reset}` : `${c.red}○ Deshabilitada (Opt-out)${c.reset}`}
+  ${c.bold}Anonymous ID:${c.reset}      ${c.dim}${anonId}${c.reset}
+  ${c.bold}Privacidad:${c.reset}        ${c.gray}Zero PII (Sin IPs, sin rutas de archivo, sin código)${c.reset}
+  
+  ${c.dim}Para deshabilitar: context-guard telemetry disable (o DO_NOT_TRACK=1)${c.reset}
+  ${c.dim}Para habilitar:    context-guard telemetry enable${c.reset}
+`);
+      return;
+    }
+
+    if (action === 'disable') {
+      disableTelemetry();
+      console.log(`\n  ${c.green}✔${c.reset} Telemetría anónima ${c.bold}deshabilitada${c.reset} correctamente.\n`);
+      return;
+    }
+
+    if (action === 'enable') {
+      enableTelemetry();
+      console.log(`\n  ${c.green}✔${c.reset} Telemetría anónima ${c.bold}habilitada${c.reset} correctamente. Gracias por ayudar a mejorar ContextGuard.\n`);
+      return;
+    }
+
+    console.error(`\n  ${c.red}✖ Acción desconocida:${c.reset} ${action}. Usa "status", "enable" o "disable".\n`);
+    process.exit(1);
   }
 
   const filePath = path.resolve(args[0]);
