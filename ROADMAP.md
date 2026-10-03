@@ -62,17 +62,19 @@ The **Model Context Protocol (MCP)** provides a universal bridge to connect Cont
 
 ---
 
-### Phase 3: Native Agent Adapters (Target: v1.2.0)
-Provide first-class configuration templates and hooks tailored to each major agent's native lifecycle.
+### Phase 3: Native Agent Adapters (✅ Completed - v1.5.0)
+Provide first-class configuration templates, automated workspace setup, and hooks tailored to each major agent's native lifecycle.
 
-- [ ] **Google Antigravity:**
-  - Lifecycle hook configuration via `.agents/hooks.json` intercepting `view_file` and `run_command`.
-  - Native Antigravity project rules (`GEMINI.md` and `.agents/rules/context-guard.md`).
+- [x] **CLI Automation (`context-guard init`):**
+  - Interactive zero-friction workspace initializer configuring rules and MCP connections for Cursor, Antigravity, and Claude Code.
+- [x] **Google Antigravity:**
+  - Lifecycle hook compatibility intercepting `view_file` (`decision: "deny" | "allow"` JSON contract).
+  - Native Antigravity project rules (`.agents/rules/context-guard.md`).
   - Antigravity Custom Skill bundle (`.agents/skills/context-guard/SKILL.md`).
-- [ ] **Cursor:**
-  - Cursor Rules (`.cursor/rules/*.mdc`) instructing Composer to favor `read_file_safe`.
-- [ ] **Kiro / Cline / Roo Code:**
-  - Direct tool override configs to replace raw file viewers.
+- [x] **Cursor:**
+  - Cursor Rules (`.cursor/rules/context-guard.mdc`) instructing Composer to favor `read_file_safe`.
+- [x] **Universal Hook Engine:**
+  - Unified `context-guard-hook` binary auto-detecting Claude Code and Antigravity protocol formats.
 
 ---
 

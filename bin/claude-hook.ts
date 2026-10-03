@@ -26,20 +26,43 @@ async function runHook(): Promise<void> {
     process.exit(0);
   }
 
-  let payload: ClaudeToolPayload;
+  let payload: any;
   try {
     payload = JSON.parse(Buffer.concat(inputChunks).toString('utf-8'));
   } catch {
     process.exit(0); // If stdin is not valid JSON, allow
   }
 
-  const toolName = payload.tool_name || payload.name;
-  const toolInput = payload.tool_input || payload.input || {};
+  // Support both Claude Code (tool_name / name) and Antigravity (toolCall.name)
+  const isAntigravity = Boolean(payload.toolCall);
+  const toolName = payload.toolCall ? payload.toolCall.name : (payload.tool_name || payload.name);
+  const toolInput = payload.toolCall ? (payload.toolCall.args || {}) : (payload.tool_input || payload.input || {});
+
+  // Helper function to respond correctly to either Claude Code or Antigravity
+  const respondAllow = (): never => {
+    if (isAntigravity) {
+      process.stdout.write(JSON.stringify({ decision: 'allow' }) + '\n');
+    }
+    process.exit(0);
+  };
+
+  const respondDeny = (message: string): never => {
+    if (isAntigravity) {
+      process.stdout.write(JSON.stringify({
+        decision: 'deny',
+        reason: message
+      }) + '\n');
+      process.exit(0);
+    } else {
+      process.stderr.write(message + '\n');
+      process.exit(2);
+    }
+  };
 
   let targetFilePath: string | null = null;
   let isScoped = false;
 
-  // 1. Intercept "Read", "View" or other file reading tools in Claude Code
+  // 1. Intercept "Read", "View" or other file reading tools in Claude Code / Antigravity
   const isReadTool = ['Read', 'View', 'view_file', 'readFile', 'read_file'].includes(toolName || '');
   if (isReadTool) {
     const rawPath = toolInput.file_path || toolInput.path || toolInput.filePath || toolInput.AbsolutePath;
@@ -61,7 +84,7 @@ async function runHook(): Promise<void> {
     const cmd = (toolInput.command || '').trim();
     // Allow piped/filtered commands (e.g. cat file | grep foo, or head -n 20)
     if (cmd.includes('|') || cmd.includes('>') || cmd.startsWith('head -n') || cmd.startsWith('tail -n')) {
-      process.exit(0);
+      respondAllow();
     }
     const catMatch = cmd.match(/^(?:cat|less|more)\s+(["']?)([^"'\s]+)\1$/);
     if (catMatch) {
@@ -71,12 +94,13 @@ async function runHook(): Promise<void> {
 
   // If not a reading tool or already scoped, allow execution immediately
   if (!targetFilePath || isScoped) {
-    process.exit(0); // Exit 0 = ALLOW
+    respondAllow();
   }
 
-  const resolvedPath = path.resolve(process.cwd(), targetFilePath);
+  const filePath: string = targetFilePath!;
+  const resolvedPath = path.resolve(process.cwd(), filePath);
   if (!fs.existsSync(resolvedPath) || fs.statSync(resolvedPath).isDirectory()) {
-    process.exit(0);
+    respondAllow();
   }
 
   const ext = path.extname(resolvedPath).toLowerCase();
@@ -90,7 +114,7 @@ async function runHook(): Promise<void> {
   ]);
 
   if (CLAUDE_NATIVE_MEDIA_EXTENSIONS.has(ext)) {
-    process.exit(0); // Exit 0 = ALLOW Claude native vision & viewer
+    respondAllow();
   }
 
   // 4. Check for Non-Multimodal Binaries, Lockfiles, and Minified files
@@ -102,8 +126,7 @@ async function runHook(): Promise<void> {
       ``,
       `👉 ${classification.recommendedAction}`
     ].join('\n');
-    process.stderr.write(feedback + '\n');
-    process.exit(2);
+    respondDeny(feedback);
   }
 
   const stat = fs.statSync(resolvedPath);
@@ -113,7 +136,7 @@ async function runHook(): Promise<void> {
 
   // If within safety thresholds, allow direct read
   if (totalLines <= CONFIG.maxLines && stat.size <= CONFIG.maxBytes) {
-    process.exit(0); // Exit 0 = ALLOW
+    respondAllow();
   }
 
   // ========================================================================
@@ -148,9 +171,8 @@ async function runHook(): Promise<void> {
     `Revisa las firmas anteriores y ejecuta la herramienta "Read" (o "View") especificando los parámetros "offset" y "limit" para inspeccionar únicamente la sección necesaria.`
   ].join('\n');
 
-  // Emit to stderr and exit with code 2 to trigger a controlled block with system feedback in Claude Code
-  process.stderr.write(feedbackMessage + '\n');
-  process.exit(2);
+  // Emit controlled block with system feedback in Claude Code or Antigravity
+  respondDeny(feedbackMessage);
 }
 
 runHook().catch(() => process.exit(0));

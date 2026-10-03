@@ -44,6 +44,7 @@ function printHelp(): void {
     ${c.green}context-guard telemetry${c.reset} <status|enable|disable>
 
   ${c.bold}COMMANDS${c.reset}
+    ${c.cyan}init${c.reset} [agent]          Configura ContextGuard automáticamente (antigravity, cursor, claude, all)
     ${c.cyan}stats${c.reset} [dir]          Muestra la telemetría acumulada o audita un directorio
     ${c.cyan}stats --watch${c.reset}        Monitor interactivo de consumo y ahorro en tiempo real
     ${c.cyan}stats --reset${c.reset}        Reinicia el historial de métricas locales
@@ -256,6 +257,160 @@ function printStats(args: string[]): void {
 `);
 }
 
+// ─── Workspace Initializer (Phase 3 Native Adapters) ──────────────────────────
+
+function initWorkspace(agentArg?: string): void {
+  const rootDir = process.cwd();
+  const agent = (agentArg || 'all').toLowerCase();
+
+  console.log(`
+  ${c.cyan}🛡️  ${c.bold}ContextGuard Workspace Initializer${c.reset}
+  ${c.dim}Configurando adaptadores y reglas nativas de ContextGuard...${c.reset}
+`);
+
+  const configured: string[] = [];
+
+  // 1. Antigravity Adapter (.agents/rules/context-guard.md & .agents/skills/context-guard/SKILL.md)
+  if (['all', 'antigravity', 'agy'].includes(agent)) {
+    const agentsDir = path.join(rootDir, '.agents');
+    const rulesDir = path.join(agentsDir, 'rules');
+    const skillDir = path.join(agentsDir, 'skills', 'context-guard');
+    
+    fs.mkdirSync(rulesDir, { recursive: true });
+    fs.mkdirSync(skillDir, { recursive: true });
+
+    const ruleContent = `# 🛡️ ContextGuard Project Rule for Google Antigravity (AGY)
+
+You MUST follow these context admission control and token optimization rules:
+
+## 1. Context Admission Control
+- **Do NOT read large files (>300 lines) into context unrestricted.**
+- When \`read_file_safe\` is available via MCP:
+  - Use \`inspect_outline(file_path)\` to get a structural map of the file with line numbers \`[L#]\`.
+  - Use \`read_file_safe(file_path)\` which automatically returns an AST skeleton for files >300 lines.
+  - When inspecting implementations, read targeted line ranges:
+    \`read_file_safe(file_path, start_line=..., end_line=...)\` or \`view_file(AbsolutePath=..., StartLine=..., EndLine=...)\`.
+
+## 2. Lockfiles and Binaries
+- **Never open lockfiles** (\`package-lock.json\`, \`pnpm-lock.yaml\`, \`yarn.lock\`, \`bun.lockb\`) or compiled/minified bundles (\`.min.js\`, \`.wasm\`, \`.pyc\`).
+- Use command-line tools (\`pnpm why <pkg>\`, \`npm ls <pkg>\`, or read \`package.json\` directly) to check package dependencies.
+`;
+
+    const skillContent = `---
+name: context-guard
+description: >-
+  Uses ContextGuard to inspect large files, outlines, and structural AST skeletons safely without blowing up the context window. Use whenever exploring unfamiliar files, large components (>300 lines), or auditing token consumption.
+---
+
+# 🛡️ ContextGuard Skill for Antigravity
+
+ContextGuard provides intelligent context admission control, reducing token usage by up to 90% when reading large source files.
+
+## Workflow:
+1. Inspect file outline first: \`inspect_outline(file_path)\`
+2. Read safe content: \`read_file_safe(file_path)\`
+3. Read targeted ranges: \`read_file_safe(file_path, start_line=N, end_line=M)\`
+4. Search symbols structurally: \`grep_distilled(pattern=...)\`
+`;
+
+    fs.writeFileSync(path.join(rulesDir, 'context-guard.md'), ruleContent, 'utf-8');
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), skillContent, 'utf-8');
+
+    // Add or merge .agents/mcp.json
+    const mcpFile = path.join(agentsDir, 'mcp.json');
+    let mcpConfig: any = { mcpServers: {} };
+    if (fs.existsSync(mcpFile)) {
+      try { mcpConfig = JSON.parse(fs.readFileSync(mcpFile, 'utf-8')); } catch {}
+    }
+    mcpConfig.mcpServers = mcpConfig.mcpServers || {};
+    mcpConfig.mcpServers['context-guard'] = {
+      command: 'npx',
+      args: ['-y', '-p', '@kevinbermudezc/context-guard@latest', 'context-guard-mcp']
+    };
+    fs.writeFileSync(mcpFile, JSON.stringify(mcpConfig, null, 2), 'utf-8');
+
+    configured.push(`Google Antigravity (.agents/rules, .agents/skills, .agents/mcp.json)`);
+  }
+
+  // 2. Cursor Adapter (.cursor/rules/context-guard.mdc & .cursor/mcp.json)
+  if (['all', 'cursor'].includes(agent)) {
+    const cursorDir = path.join(rootDir, '.cursor');
+    const rulesDir = path.join(cursorDir, 'rules');
+    fs.mkdirSync(rulesDir, { recursive: true });
+
+    const cursorRuleContent = `---
+description: ContextGuard FinOps and Context Window Admission Control
+globs: *
+alwaysApply: true
+---
+
+# 🛡️ ContextGuard Rule for Cursor (Composer & Chat)
+
+You MUST follow these context admission control and token optimization rules:
+1. Zero direct reads for files >300 lines without slice bounds.
+2. Prioritize ContextGuard MCP tools:
+   - \`read_file_safe(file_path)\`: Returns AST skeleton automatically for files >300 lines.
+   - \`inspect_outline(file_path)\`: Instant zero-cost structural outline (<5ms).
+   - Read targeted slices: \`read_file_safe(file_path, start_line, end_line)\`.
+3. Never read lockfiles (\`package-lock.json\`, \`pnpm-lock.yaml\`) or minified bundles.
+`;
+
+    fs.writeFileSync(path.join(rulesDir, 'context-guard.mdc'), cursorRuleContent, 'utf-8');
+
+    const cursorMcpFile = path.join(cursorDir, 'mcp.json');
+    let cursorMcpConfig: any = { mcpServers: {} };
+    if (fs.existsSync(cursorMcpFile)) {
+      try { cursorMcpConfig = JSON.parse(fs.readFileSync(cursorMcpFile, 'utf-8')); } catch {}
+    }
+    cursorMcpConfig.mcpServers = cursorMcpConfig.mcpServers || {};
+    cursorMcpConfig.mcpServers['context-guard'] = {
+      command: 'npx',
+      args: ['-y', '-p', '@kevinbermudezc/context-guard@latest', 'context-guard-mcp']
+    };
+    fs.writeFileSync(cursorMcpFile, JSON.stringify(cursorMcpConfig, null, 2), 'utf-8');
+
+    configured.push(`Cursor (.cursor/rules/context-guard.mdc, .cursor/mcp.json)`);
+  }
+
+  // 3. Claude Code Adapter (.claude/settings.json PreToolUse hook)
+  if (['all', 'claude'].includes(agent)) {
+    const claudeDir = path.join(rootDir, '.claude');
+    fs.mkdirSync(claudeDir, { recursive: true });
+
+    const settingsFile = path.join(claudeDir, 'settings.json');
+    let settings: any = {};
+    if (fs.existsSync(settingsFile)) {
+      try { settings = JSON.parse(fs.readFileSync(settingsFile, 'utf-8')); } catch {}
+    }
+
+    settings.hooks = settings.hooks || {};
+    settings.hooks.PreToolUse = settings.hooks.PreToolUse || [];
+    const hookCmd = 'npx -y -p @kevinbermudezc/context-guard context-guard-hook';
+
+    const exists = settings.hooks.PreToolUse.some((h: any) => 
+      h.command && h.command.includes('context-guard-hook')
+    );
+
+    if (!exists) {
+      settings.hooks.PreToolUse.push({
+        matcher: 'Read|View|view_file|readFile|read_file|Bash|bash',
+        command: hookCmd
+      });
+    }
+
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), 'utf-8');
+    configured.push(`Claude Code (.claude/settings.json PreToolUse hook)`);
+  }
+
+  for (const item of configured) {
+    console.log(`  ${c.green}✔ Adaptador configurado:${c.reset} ${item}`);
+  }
+
+  console.log(`
+  ${c.bold}🚀 ¡Todo listo!${c.reset} Tus agentes ahora respetarán los límites de contexto y optimizarán tokens automáticamente.
+`);
+}
+
 // ─── Single File Execution Card ───────────────────────────────────────────────
 
 function printExecutionCard(filePath: string, result: any): void {
@@ -296,6 +451,12 @@ async function runCli(): Promise<void> {
   if (args.includes('-v') || args.includes('--version')) {
     console.log(`ContextGuard v${VERSION}`);
     process.exit(0);
+  }
+
+  // Subcommand: init
+  if (args[0] === 'init') {
+    initWorkspace(args[1]);
+    return;
   }
 
   // Subcommand: stats

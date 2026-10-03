@@ -1,0 +1,17 @@
+{
+  "context-guard-admission": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "view_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx -y -p @kevinbermudezc/context-guard context-guard-hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
