@@ -19,6 +19,7 @@ export * from './import-collapser.js';
 export * from './token-metrics.js';
 export * from './telemetry.js';
 export * from './version.js';
+export * from './update-notifier.js';
 
 /**
  * Main engine of ContextGuard
