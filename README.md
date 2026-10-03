@@ -260,9 +260,9 @@ Add to your respective MCP configuration file:
 
 ---
 
-## 🛠️ CLI & FinOps Telemetry (v1.3.2)
+## 🛠️ CLI & FinOps Telemetry (v1.4.0)
 
-ContextGuard includes a beautiful developer CLI with built-in token savings and financial ROI telemetry:
+ContextGuard includes a beautiful developer CLI with built-in token savings, financial ROI telemetry, and privacy controls:
 
 ```bash
 # View file through ContextGuard (shows FinOps savings card if shunted)
@@ -277,12 +277,39 @@ npx @kevinbermudezc/context-guard stats src/
 # Real-time interactive telemetry monitor (updates live during Claude/Cursor sessions)
 npx @kevinbermudezc/context-guard stats --watch
 
+# Check anonymous telemetry status and local machine ID
+npx @kevinbermudezc/context-guard telemetry status
+
+# Opt-out / disable anonymous telemetry completely
+npx @kevinbermudezc/context-guard telemetry disable
+
+# Opt-in / re-enable anonymous telemetry
+npx @kevinbermudezc/context-guard telemetry enable
+
 # Ask a semantic question to the worker model
 npx @kevinbermudezc/context-guard logs/server.log --query "Find all 500 status timeouts"
 
 # Specific line range (bypasses guard / passthrough)
 npx @kevinbermudezc/context-guard src/large-service.ts --start 120 --end 160
 ```
+
+---
+
+## 🔒 Privacy & Anonymous Telemetry
+
+To measure real active usage and global token savings across AI coding workflows (beyond raw npm download counts), ContextGuard includes a **lightweight, privacy-preserving, opt-out telemetry ping**.
+
+### Principles:
+- **Zero PII:** Absolutely **no IP addresses stored**, no file names, no file paths, and no code contents.
+- **Random Anonymous ID:** A purely random UUIDv4 stored locally in `~/.contextguard/anonymous-id`.
+- **Non-blocking:** Sub-1000ms timeout with fire-and-forget execution; never slows down execution or blocks offline usage.
+- **Payload Schema:** Only sends `{ anonymousId, version, source, event, os, arch, tokensSaved }`.
+
+### Opt-out:
+You can completely disable telemetry at any time using any of the following:
+1. Run CLI command: `context-guard telemetry disable`
+2. Set environment variable: `export CONTEXT_GUARD_TELEMETRY=0` (or `false`)
+3. Set the global privacy standard: `export DO_NOT_TRACK=1`
 
 ---
 

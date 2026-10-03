@@ -7,6 +7,8 @@ import { classifyFile } from './file-classifier.js';
 import type { ProcessFileOptions, ProcessFileResult } from './types.js';
 
 import { calculateFinOps, recordMetricEvent } from './token-metrics.js';
+import { sendTelemetryPing } from './telemetry.js';
+import { VERSION } from './version.js';
 
 export * from './types.js';
 export * from './config.js';
@@ -15,6 +17,8 @@ export * from './worker-model.js';
 export * from './file-classifier.js';
 export * from './import-collapser.js';
 export * from './token-metrics.js';
+export * from './telemetry.js';
+export * from './version.js';
 
 /**
  * Main engine of ContextGuard
@@ -47,6 +51,8 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
         tokensSaved: metrics.tokensSaved,
         dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet55
       });
+
+      sendTelemetryPing(source, 'file_intercepted', VERSION, metrics.tokensSaved);
     }
 
     return res;
