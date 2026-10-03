@@ -1,5 +1,7 @@
 # 🛡️ ContextGuard
 
+[![Website](https://img.shields.io/badge/Website-contextguardweb.vercel.app-00DC82.svg?logo=vercel&logoColor=white)](https://contextguardweb.vercel.app)
+[![npm version](https://img.shields.io/npm/v/@kevinbermudezc/context-guard.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/@kevinbermudezc/context-guard)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node: >=18](https://img.shields.io/badge/Node->=18.0.0-green.svg)](https://nodejs.org/)
 [![pnpm: >=10](https://img.shields.io/badge/pnpm->=10.0.0-F69220.svg?logo=pnpm&logoColor=white)](https://pnpm.io/)
@@ -7,6 +9,7 @@
 [![Go Engine](https://img.shields.io/badge/Compiler-Go%20Native%20(Corsa)-00ADD8.svg)](https://golang.org/)
 
 > **Intelligent context admission control & token optimization for Claude Code, Cursor, and Agentic AI workflows.**
+> 🌐 **Official Website & Docs:** [https://contextguardweb.vercel.app](https://contextguardweb.vercel.app)
 
 > 🐶 **Built on Dogfooding:** ContextGuard built itself — saving over 500,000 tokens during its own development lifecycle, verified by its internal FinOps ledger.
 
