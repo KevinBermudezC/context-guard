@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
-import { processWithContextGuard } from '../src/index.js';
+import { processWithContextGuard, calculateFinOps, recordMetricEvent } from '../src/index.js';
 import { CONFIG } from '../src/config.js';
 import { classifyFile } from '../src/file-classifier.js';
 import { extractCodeSkeleton, isSupportedExtension } from '../src/skeletonizer.js';
@@ -29,7 +29,7 @@ import { spawnSync } from 'node:child_process';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SERVER_NAME = 'context-guard';
-const SERVER_VERSION = '1.3.1';
+const SERVER_VERSION = '1.3.2';
 
 // Native Claude Code / multimodal formats — allow full passthrough
 const NATIVE_MEDIA_EXTS = new Set([
@@ -268,7 +268,8 @@ server.registerTool(
         filePath: file_path,
         startLine: start_line,
         endLine: end_line,
-        query: query ?? ''
+        query: query ?? '',
+        source: 'mcp'
       });
 
       // Format the response with status metadata header
@@ -365,6 +366,21 @@ server.registerTool(
             text: `ℹ️ [CONTEXTGUARD] No structural declarations found in "${path.basename(file_path)}" (${totalLines} lines).`
           }]
         };
+      }
+
+      if (totalLines > 300) {
+        const metrics = calculateFinOps(raw, skeleton);
+        if (metrics.tokensSaved > 0) {
+          recordMetricEvent({
+            source: 'mcp',
+            filePath: path.relative(process.cwd(), resolved),
+            action: 'INSPECT_OUTLINE',
+            rawTokens: metrics.rawTokens,
+            guardedTokens: metrics.guardedTokens,
+            tokensSaved: metrics.tokensSaved,
+            dollarsSavedSonnet: metrics.dollarsSaved.claudeSonnet55
+          });
+        }
       }
 
       return {

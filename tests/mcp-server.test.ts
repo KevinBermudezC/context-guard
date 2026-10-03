@@ -10,6 +10,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { getAggregatedStats } from '../src/token-metrics.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MCP_SERVER_BIN = path.resolve(__dirname, '../../dist/bin/mcp-server.js');
@@ -114,7 +115,7 @@ describe('ContextGuard MCP Server (Phase 2)', () => {
     assert.ok(result.serverInfo, 'Must include serverInfo');
     const info = result.serverInfo as Record<string, string>;
     assert.strictEqual(info.name, 'context-guard');
-    assert.strictEqual(info.version, '1.3.1');
+    assert.strictEqual(info.version, '1.3.2');
   });
 
   it('should list exactly 3 registered tools', async () => {
@@ -301,5 +302,25 @@ describe('ContextGuard MCP Server (Phase 2)', () => {
     assert.ok(!res.error, `Unexpected error: ${JSON.stringify(res.error)}`);
     const result = res.result as { prompts: Array<{ name: string }> };
     assert.ok(result.prompts.some((p) => p.name === 'investigate_codebase_safely'), 'Must expose prompt template');
+  });
+
+  it('telemetry: should record MCP events with source="mcp" when large file is inspected', async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cg-mcp-telemetry-'));
+    const tmpFile = path.join(tmpDir, 'service.ts');
+    const lines = ['export class OrderService {', '  processOrder() {}', '}'];
+    while (lines.length < 320) lines.push(`  // padding line ${lines.length}`);
+    fs.writeFileSync(tmpFile, lines.join('\n'));
+
+    await sendRequest(proc, req('tools/call', {
+      name: 'inspect_outline',
+      arguments: { file_path: tmpFile }
+    }));
+
+    const stats = getAggregatedStats();
+    const mcpEvents = stats.events.filter((e) => e.source === 'mcp');
+    assert.ok(mcpEvents.length > 0, 'Must record at least one MCP event');
+    assert.strictEqual(mcpEvents[mcpEvents.length - 1].source, 'mcp');
+
+    fs.rmSync(tmpDir, { recursive: true });
   });
 });

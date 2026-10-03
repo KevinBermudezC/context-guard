@@ -260,7 +260,7 @@ Add to your respective MCP configuration file:
 
 ---
 
-## 🛠️ CLI & FinOps Telemetry (v1.3.1)
+## 🛠️ CLI & FinOps Telemetry (v1.3.2)
 
 ContextGuard includes a beautiful developer CLI with built-in token savings and financial ROI telemetry:
 

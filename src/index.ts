@@ -21,7 +21,7 @@ export * from './token-metrics.js';
  * Evaluates file size and either passes it through or shunts it to an AST/Worker summary.
  */
 export async function processWithContextGuard(options: ProcessFileOptions): Promise<ProcessFileResult> {
-  const { filePath, query = '', startLine, endLine, forceWorker = false } = options;
+  const { filePath, query = '', startLine, endLine, forceWorker = false, source = 'cli' } = options;
 
   const resolved = path.resolve(process.cwd(), filePath);
   if (!fs.existsSync(resolved) || fs.statSync(resolved).isDirectory()) {
@@ -39,7 +39,7 @@ export async function processWithContextGuard(options: ProcessFileOptions): Prom
 
     if (metrics.tokensSaved > 0) {
       recordMetricEvent({
-        source: 'cli',
+        source,
         filePath: path.relative(process.cwd(), resolved),
         action: res.status,
         rawTokens: metrics.rawTokens,

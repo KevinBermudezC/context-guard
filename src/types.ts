@@ -19,6 +19,7 @@ export interface ProcessFileOptions {
   startLine?: number;
   endLine?: number;
   forceWorker?: boolean;
+  source?: 'cli' | 'mcp' | 'hook';
 }
 
 export type ProcessFileStatus = 
